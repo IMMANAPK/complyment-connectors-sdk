@@ -2550,28 +2550,29 @@ var JiraConnector = class extends BaseConnector {
       if (filter?.createdBefore) jqlParts.push(`created <= "${filter.createdBefore}"`);
     }
     const jql = jqlParts.length ? jqlParts.join(" AND ") : "ORDER BY created DESC";
-    const response = await this.post(
+    const fields = [
+      "summary",
+      "description",
+      "status",
+      "priority",
+      "issuetype",
+      "project",
+      "assignee",
+      "reporter",
+      "labels",
+      "created",
+      "updated",
+      "duedate",
+      "resolutiondate",
+      "components"
+    ].join(",");
+    const response = await this.get(
       "/rest/api/3/search/jql",
       {
         jql,
         startAt: filter?.startAt ?? 0,
         maxResults: filter?.maxResults ?? 50,
-        fields: [
-          "summary",
-          "description",
-          "status",
-          "priority",
-          "issuetype",
-          "project",
-          "assignee",
-          "reporter",
-          "labels",
-          "created",
-          "updated",
-          "duedate",
-          "resolutiondate",
-          "components"
-        ]
+        fields
       }
     );
     if (response.data) {
