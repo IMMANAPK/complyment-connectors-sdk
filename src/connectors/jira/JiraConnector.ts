@@ -106,8 +106,10 @@ export class JiraConnector extends BaseConnector {
 
     const jql = jqlParts.length ? jqlParts.join(' AND ') : 'ORDER BY created DESC'
 
+    // Using new /rest/api/3/search/jql endpoint (migrated from deprecated /rest/api/3/search)
+    // Reference: https://developer.atlassian.com/changelog/#CHANGE-2046
     const response = await this.post<JiraIssueListResponse>(
-      '/rest/api/3/search',
+      '/rest/api/3/search/jql',
       {
         jql,
         startAt: filter?.startAt ?? 0,

@@ -2551,7 +2551,7 @@ var JiraConnector = class extends BaseConnector {
     }
     const jql = jqlParts.length ? jqlParts.join(" AND ") : "ORDER BY created DESC";
     const response = await this.post(
-      "/rest/api/3/search",
+      "/rest/api/3/search/jql",
       {
         jql,
         startAt: filter?.startAt ?? 0,
