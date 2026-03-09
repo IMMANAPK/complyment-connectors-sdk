@@ -1,17 +1,25 @@
 {
   "name": "@skill-mine/complyment-connectors-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Enterprise security tool connectors SDK by Skill-Mine Technology",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["connectors", "security", "sdk", "qualys", "sentinelone"],
+  "keywords": [
+    "connectors",
+    "security",
+    "sdk",
+    "qualys",
+    "sentinelone"
+  ],
   "author": "Skill-Mine Technology",
   "license": "ISC",
   "devDependencies": {
