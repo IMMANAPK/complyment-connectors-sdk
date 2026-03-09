@@ -605,8 +605,4 @@ export class TenableIoConnector extends BaseConnector {
   getSeverityName(severityId: number): string {
     return TENABLE_IO_SEVERITY_MAP[severityId] || 'unknown'
   }
-
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-  }
 }
