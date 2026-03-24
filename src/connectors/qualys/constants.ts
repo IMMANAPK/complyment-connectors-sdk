@@ -49,6 +49,9 @@ export const QUALYS_VM_API_PATHS = {
 
   // QPS API (newer REST API)
   QPS_HOST_ASSET: '/qps/rest/2.0/search/am/hostasset',
+
+  // VMDR REST API (required for VMDR-only subscriptions — replaces classic VM detection API)
+  VMDR_FINDINGS: '/rest/2.0/fo/finding/',
 } as const
 
 // Qualys API Endpoints - Web Application Scanning (WAS)

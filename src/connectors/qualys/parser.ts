@@ -192,6 +192,89 @@ export function parseWASFindings(
 }
 
 // ============================================
+// VMDR Findings Parser (VMDR REST API)
+// ============================================
+
+/**
+ * Parse response from VMDR REST API: GET /rest/2.0/fo/finding/
+ * Response format: { count, hasMore, responseCode, data: [{ Finding: {...} }] }
+ */
+export function parseVMDRFindings(
+  response: any,
+  title = 'VMDR Findings',
+): QualysParsedReport {
+  const findingsList: any[] = response?.data || []
+
+  if (!Array.isArray(findingsList) || findingsList.length === 0) {
+    return emptyReport(title)
+  }
+
+  const vulnerabilities: QualysVulnerability[] = []
+  const hostsSet = new Set<string>()
+  const severityCounts = { critical: 0, high: 0, medium: 0, low: 0, info: 0 }
+
+  for (const item of findingsList) {
+    const finding = item.Finding || item
+    if (!finding) continue
+
+    const qid = parseInt(finding.qid || '0')
+    if (qid === 0) continue
+
+    const severity = parseInt(finding.severity || '1') as QualysSeverity
+    const hostIp: string = finding.hostIp || finding.ip || ''
+    const hostFqdn: string = finding.hostFqdn || finding.fqdn || finding.dns || ''
+
+    if (hostIp) hostsSet.add(hostIp)
+
+    // VMDR returns CVE IDs as a comma-separated string
+    const cveList: string[] = finding.cveIds
+      ? String(finding.cveIds).split(',').map((s: string) => s.trim()).filter(Boolean)
+      : []
+
+    const vulnerability: QualysVulnerability = {
+      qid,
+      title: finding.title || finding.name || `QID-${qid}`,
+      severity,
+      ip: hostIp,
+      dns: hostFqdn,
+      os: finding.os || '',
+      port: finding.port ? parseInt(finding.port) : undefined,
+      protocol: finding.protocol,
+      ssl: finding.ssl === true || finding.ssl === 'true',
+      firstFound: finding.firstFound ? new Date(finding.firstFound) : undefined,
+      lastFound: finding.lastFound ? new Date(finding.lastFound) : undefined,
+      lastUpdate: finding.lastFound ? new Date(finding.lastFound) : undefined,
+      timesFound: parseInt(finding.timesFound || '1'),
+      status: finding.status || 'ACTIVE',
+      results: finding.results || '',
+      cvssBase: finding.cvssScore ? parseFloat(finding.cvssScore) : undefined,
+      cvss3Base: finding.cvss3Score ? parseFloat(finding.cvss3Score) : undefined,
+      cveList,
+      solution: finding.solution,
+      diagnosis: finding.diagnosis,
+      category: finding.category,
+      pciFlag: finding.pciFlag === true || finding.pciFlag === 'true',
+    }
+
+    vulnerabilities.push(vulnerability)
+    incrementSeverityCount(severityCounts, severity)
+  }
+
+  return {
+    scanTitle: title,
+    hostsScanned: hostsSet.size,
+    totalVulnerabilities: vulnerabilities.length,
+    criticalCount: severityCounts.critical,
+    highCount: severityCounts.high,
+    mediumCount: severityCounts.medium,
+    lowCount: severityCounts.low,
+    infoCount: severityCounts.info,
+    vulnerabilities,
+    hosts: Array.from(hostsSet).map((ip) => ({ ip })),
+  }
+}
+
+// ============================================
 // KB Parser
 // ============================================
 
@@ -480,7 +563,7 @@ export function extractScanRefFromLaunchResponse(response: any): string {
 // Helper Functions
 // ============================================
 
-function emptyReport(scanTitle: string): QualysParsedReport {
+export function emptyReport(scanTitle: string): QualysParsedReport {
   return {
     scanTitle,
     hostsScanned: 0,

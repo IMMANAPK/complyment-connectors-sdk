@@ -2,7 +2,7 @@
 
 > Enterprise Security Tool Connectors SDK — built at Skill-Mine Technology
 
-A TypeScript SDK that abstracts 6+ enterprise security tool integrations with built-in AI agent compatibility, circuit breakers, rate limiting, and human-in-the-loop controls.
+A TypeScript SDK that abstracts 8+ enterprise security tool integrations with built-in AI agent compatibility, circuit breakers, rate limiting, and human-in-the-loop controls.
 
 [![npm version](https://img.shields.io/badge/npm-0.1.0-blue)](https://www.npmjs.com/package/@skill-mine/complyment-connectors-sdk)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
@@ -13,7 +13,7 @@ A TypeScript SDK that abstracts 6+ enterprise security tool integrations with bu
 
 ## Features
 
-- **6 Connectors** — Qualys, SentinelOne, Checkpoint, ManageEngine, Jira, Zoho
+- **8 Connectors** — Qualys, SentinelOne, Checkpoint, ManageEngine, Jira, Zoho, Tenable.io, Tenable.sc
 - **AI Agent Ready** — MCP, LangChain, Vercel AI SDK, OpenAI Agents SDK
 - **Resilience** — Circuit breaker, retry with backoff, rate limiting, caching
 - **Observability** — OpenTelemetry tracing, structured logging, audit logs
@@ -120,6 +120,60 @@ const zoho = new ZohoConnector({ ...config })
 await zoho.getContacts()
 await zoho.createLead({ lastName: 'Doe', company: 'Acme', email: 'doe@acme.com' })
 await zoho.getDeals({ stage: 'Qualification' })
+```
+
+### Tenable.io (Cloud)
+```typescript
+import { TenableIoConnector } from '@skill-mine/complyment-connectors-sdk'
+
+const tenableIo = new TenableIoConnector({
+  accessKey: process.env.TENABLE_IO_ACCESS_KEY!,
+  secretKey: process.env.TENABLE_IO_SECRET_KEY!,
+})
+
+// Assets & Vulnerabilities
+await tenableIo.getAssets()
+await tenableIo.exportVulnerabilitiesComplete({ severity: ['critical', 'high'] })
+
+// Scans
+await tenableIo.getScans()
+await tenableIo.launchScan('scan-id')
+await tenableIo.pauseScan('scan-id')
+
+// Workbench (Quick Queries)
+await tenableIo.getWorkbenchVulnerabilities({ date_range: 30 })
+await tenableIo.getWorkbenchAssets()
+
+// Statistics
+await tenableIo.getStats()
+```
+
+### Tenable.sc (On-Premises)
+```typescript
+import { TenableScConnector } from '@skill-mine/complyment-connectors-sdk'
+
+const tenableSc = new TenableScConnector({
+  baseUrl: process.env.TENABLE_SC_BASE_URL!,
+  accessKey: process.env.TENABLE_SC_ACCESS_KEY!,
+  secretKey: process.env.TENABLE_SC_SECRET_KEY!,
+})
+
+// Assets & Vulnerabilities
+await tenableSc.getAssets()
+await tenableSc.getVulnerabilities({ severity: '4' }) // Critical
+await tenableSc.getCriticalVulnerabilities()
+
+// Policies & Users
+await tenableSc.getPolicies()
+await tenableSc.getUsers()
+await tenableSc.createUser({ username: 'analyst', role: { id: 4 } })
+
+// Scans & Results
+await tenableSc.getScans()
+await tenableSc.getScanResults()
+
+// Statistics
+await tenableSc.getStats()
 ```
 
 ---
@@ -335,6 +389,15 @@ COMPLYMENT_MANAGEENGINE_BASE_URL=https://your-manageengine
 COMPLYMENT_MANAGEENGINE_CLIENT_ID=your_client_id
 COMPLYMENT_MANAGEENGINE_CLIENT_SECRET=your_client_secret
 COMPLYMENT_MANAGEENGINE_REFRESH_TOKEN=your_refresh_token
+
+# Tenable.io (Cloud)
+TENABLE_IO_ACCESS_KEY=your_access_key
+TENABLE_IO_SECRET_KEY=your_secret_key
+
+# Tenable.sc (On-Premises)
+TENABLE_SC_BASE_URL=https://your-tenable-sc-server
+TENABLE_SC_ACCESS_KEY=your_access_key
+TENABLE_SC_SECRET_KEY=your_secret_key
 ```
 
 ---
@@ -353,7 +416,7 @@ dist/
 ## Architecture
 ```
 @skill-mine/complyment-connectors-sdk
-├── Connectors        (Qualys, SentinelOne, Checkpoint, ManageEngine, Jira, Zoho)
+├── Connectors        (Qualys, SentinelOne, Checkpoint, ManageEngine, Jira, Zoho, Tenable.io, Tenable.sc)
 ├── Core              (BaseConnector, Registry, Types, Errors)
 ├── Middleware        (CircuitBreaker, RateLimiter, RetryHandler, CacheLayer)
 ├── Telemetry         (Logger, OpenTelemetry Tracer)

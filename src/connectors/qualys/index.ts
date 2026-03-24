@@ -7,6 +7,8 @@ export * from './types'
 export * from './constants'
 export {
   parseHostDetections,
+  parseVMDRFindings,
+  emptyReport,
   parseWASFindings,
   parseVulnerabilityKB,
   enrichVulnerabilitiesWithKB,

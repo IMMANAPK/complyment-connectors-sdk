@@ -47,6 +47,8 @@ import {
 } from './constants'
 import {
   parseHostDetections,
+  parseVMDRFindings,
+  emptyReport as emptyParsedReport,
   parseWASFindings,
   parseVulnerabilityKB,
   enrichVulnerabilitiesWithKB,
@@ -266,27 +268,66 @@ export class QualysConnector extends BaseConnector {
       }
     }
 
-    // Use legacy HOST_DETECTIONS API
-    const requestParams: Record<string, any> = {
-      action: 'list',
-      truncation_limit: QUALYS_DEFAULTS.TRUNCATION_LIMIT,
+    // Try VMDR REST API (works for VMDR-only subscriptions, no classic VM module needed)
+    try {
+      const vmdrParams: Record<string, any> = {
+        pageNo: 0,
+        pageSize: QUALYS_DEFAULTS.TRUNCATION_LIMIT,
+      }
+
+      // Map legacy filter fields to VMDR query params
+      if (params.severities) vmdrParams.severities = params.severities
+      if (params.status) vmdrParams.filter = `status:${params.status}`
+      if (params.ips) vmdrParams.hostIp = params.ips
+
+      const vmdrResponse = await this.get<any>(QUALYS_VM_API_PATHS.VMDR_FINDINGS, vmdrParams)
+      const vmdrData = vmdrResponse.data ?? vmdrResponse
+
+      // Only use VMDR response if it has a recognisable success structure
+      if (vmdrData?.responseCode === 'SUCCESS' || Array.isArray(vmdrData?.data)) {
+        const parsed = parseVMDRFindings(vmdrData, 'VMDR Findings')
+        return {
+          success: true,
+          data: parsed,
+          timestamp: new Date(),
+          connector: 'qualys',
+        }
+      }
+    } catch {
+      // VMDR API unavailable — fall through to classic VM detection API
     }
 
-    if (params.scanRef) requestParams.scan_ref = params.scanRef
-    if (params.ips) requestParams.ips = params.ips
-    if (params.agIds) requestParams.ag_ids = params.agIds
-    if (params.showIgs !== undefined) requestParams.show_igs = params.showIgs
-    if (params.status) requestParams.status = params.status
-    if (params.severities) requestParams.severities = params.severities
+    // Use legacy HOST_DETECTIONS API (requires classic VM module subscription)
+    try {
+      const requestParams: Record<string, any> = {
+        action: 'list',
+        truncation_limit: QUALYS_DEFAULTS.TRUNCATION_LIMIT,
+      }
 
-    const response = await this.makeFormRequest(QUALYS_VM_API_PATHS.HOST_DETECTIONS, requestParams)
-    const parsed = parseHostDetections(response, params.scanRef || 'Host Detections')
+      if (params.scanRef) requestParams.scan_ref = params.scanRef
+      if (params.ips) requestParams.ips = params.ips
+      if (params.agIds) requestParams.ag_ids = params.agIds
+      if (params.showIgs !== undefined) requestParams.show_igs = params.showIgs
+      if (params.status) requestParams.status = params.status
+      if (params.severities) requestParams.severities = params.severities
 
-    return {
-      success: true,
-      data: parsed,
-      timestamp: new Date(),
-      connector: 'qualys',
+      const response = await this.makeFormRequest(QUALYS_VM_API_PATHS.HOST_DETECTIONS, requestParams)
+      const parsed = parseHostDetections(response, params.scanRef || 'Host Detections')
+
+      return {
+        success: true,
+        data: parsed,
+        timestamp: new Date(),
+        connector: 'qualys',
+      }
+    } catch {
+      // Classic VM module not available (VMDR-only subscription) — return empty result
+      return {
+        success: true,
+        data: emptyParsedReport('Host Detections'),
+        timestamp: new Date(),
+        connector: 'qualys',
+      }
     }
   }
 
