@@ -264,7 +264,8 @@ export class QualysConnector extends BaseConnector {
         }
       } catch (qpsError: any) {
         if (requiresQPSAPI) throw qpsError
-        // Fall through to legacy API
+        // Log and fall through to legacy API
+        this.log(LogLevel.DEBUG, 'QPS API unavailable, falling back to VMDR/legacy API', { error: qpsError?.message })
       }
     }
 
@@ -293,8 +294,9 @@ export class QualysConnector extends BaseConnector {
           connector: 'qualys',
         }
       }
-    } catch {
+    } catch (vmdrError: any) {
       // VMDR API unavailable — fall through to classic VM detection API
+      this.log(LogLevel.DEBUG, 'VMDR API unavailable, falling back to legacy VM API', { error: vmdrError?.message })
     }
 
     // Use legacy HOST_DETECTIONS API (requires classic VM module subscription)
@@ -320,11 +322,16 @@ export class QualysConnector extends BaseConnector {
         timestamp: new Date(),
         connector: 'qualys',
       }
-    } catch {
-      // Classic VM module not available (VMDR-only subscription) — return empty result
+    } catch (legacyError: any) {
+      // Classic VM module not available (VMDR-only subscription) — return empty result with warning
+      this.log(LogLevel.WARN, 'All Qualys APIs failed, returning empty result', { error: legacyError?.message })
+      const emptyResult = emptyParsedReport('Host Detections')
       return {
         success: true,
-        data: emptyParsedReport('Host Detections'),
+        data: {
+          ...emptyResult,
+          warnings: [...(emptyResult.warnings || []), 'No detection APIs available - QPS, VMDR, and legacy VM APIs all failed'],
+        },
         timestamp: new Date(),
         connector: 'qualys',
       }
@@ -352,10 +359,12 @@ export class QualysConnector extends BaseConnector {
         connector: 'qualys',
       }
     } catch (error: any) {
-      // KB API may return 401 if user doesn't have permissions - return empty map
+      // KB API may return 401 if user doesn't have permissions - return empty map with warning
+      this.log(LogLevel.WARN, 'KB API unavailable, returning empty knowledge base', { error: error?.message })
       return {
         success: true,
         data: new Map(),
+        error: `KB API unavailable: ${error?.message || 'Unknown error'}`,
         timestamp: new Date(),
         connector: 'qualys',
       }
@@ -734,10 +743,22 @@ export class QualysConnector extends BaseConnector {
     targetHosts: string[],
     optionProfileId: string,
   ): Promise<ConnectorResponse<QualysScan>> {
+    // Validate optionProfileId is a valid number
+    const optionId = parseInt(optionProfileId, 10)
+    if (isNaN(optionId)) {
+      return {
+        success: false,
+        data: undefined,
+        error: `Invalid optionProfileId: "${optionProfileId}" is not a valid number`,
+        timestamp: new Date(),
+        connector: 'qualys',
+      }
+    }
+
     const response = await this.launchVMScan({
       scanTitle: title,
       ip: targetHosts.join(','),
-      optionId: parseInt(optionProfileId),
+      optionId,
     })
 
     if (!response.success || !response.data) {

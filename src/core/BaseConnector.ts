@@ -41,7 +41,14 @@ interface CircuitBreakerState {
 interface CacheEntry<T> {
     data: T
     expiresAt: Date
+    createdAt: Date
 }
+
+// ============================================
+// Cache Config
+// ============================================
+
+const CACHE_MAX_SIZE = 1000  // Maximum cache entries
 
 // ============================================
 // Abstract Base Connector
@@ -410,11 +417,38 @@ export abstract class BaseConnector extends EventEmitter {
     }
 
     private setCache<T>(key: string, data: T): void {
+        // Enforce max cache size - evict oldest entries if needed
+        if (this.cache.size >= CACHE_MAX_SIZE) {
+            this.evictOldestCacheEntries(Math.floor(CACHE_MAX_SIZE * 0.1)) // Evict 10%
+        }
+
         const ttl = (this.config.cache?.ttl ?? 300) * 1000
+        const now = new Date()
         this.cache.set(key, {
             data,
-            expiresAt: new Date(Date.now() + ttl),
+            expiresAt: new Date(now.getTime() + ttl),
+            createdAt: now,
         })
+    }
+
+    private evictOldestCacheEntries(count: number): void {
+        // First, remove expired entries
+        const now = new Date()
+        for (const [key, entry] of this.cache.entries()) {
+            if (now > entry.expiresAt) {
+                this.cache.delete(key)
+            }
+        }
+
+        // If still over limit, remove oldest by creation time
+        if (this.cache.size >= CACHE_MAX_SIZE) {
+            const entries = Array.from(this.cache.entries())
+                .sort((a, b) => a[1].createdAt.getTime() - b[1].createdAt.getTime())
+
+            for (let i = 0; i < count && i < entries.length; i++) {
+                this.cache.delete(entries[i][0])
+            }
+        }
     }
 
     clearCache(): void {

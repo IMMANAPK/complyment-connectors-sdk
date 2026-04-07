@@ -66,6 +66,7 @@ export interface HITLManagerOptions {
 export class HITLManager {
   private requests: Map<string, HITLRequest> = new Map()
   private handlers: Map<string, (params: Record<string, unknown>) => Promise<unknown>> = new Map()
+  private expiryTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()  // Track timers for cleanup
 
   private readonly defaultTimeoutMs: number
   private readonly autoApproveRiskLevels: HITLRiskLevel[]
@@ -131,16 +132,31 @@ export class HITLManager {
 
     this.onApprovalRequired?.(request)
 
-    // Set expiry timer
-    setTimeout(() => {
+    // Set expiry timer and store reference for cleanup
+    const timerId = setTimeout(() => {
       const req = this.requests.get(request.id)
       if (req && req.status === 'pending') {
         req.status = 'expired'
         this.onExpired?.(req)
       }
+      this.expiryTimers.delete(request.id)  // Clean up timer reference
     }, options.timeoutMs ?? this.defaultTimeoutMs)
 
+    this.expiryTimers.set(request.id, timerId)
+
     return request
+  }
+
+  // ============================================
+  // Clear Expiry Timer (called when request resolved)
+  // ============================================
+
+  private clearExpiryTimer(requestId: string): void {
+    const timerId = this.expiryTimers.get(requestId)
+    if (timerId) {
+      clearTimeout(timerId)
+      this.expiryTimers.delete(requestId)
+    }
   }
 
   // ============================================
@@ -160,6 +176,9 @@ export class HITLManager {
     if (request.status !== 'pending') {
       throw new Error(`Request ${requestId} is already ${request.status}`)
     }
+
+    // Clear the expiry timer since request is being resolved
+    this.clearExpiryTimer(requestId)
 
     request.status = 'approved'
     request.approvedBy = approvedBy
@@ -186,6 +205,9 @@ export class HITLManager {
     if (request.status !== 'pending') {
       throw new Error(`Request ${requestId} is already ${request.status}`)
     }
+
+    // Clear the expiry timer since request is being resolved
+    this.clearExpiryTimer(requestId)
 
     request.status = 'rejected'
     request.rejectedBy = rejectedBy

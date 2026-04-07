@@ -20,12 +20,14 @@ export enum ConnectorStatus {
   CONNECTING = 'connecting',
 }
 
-// Log Levels
+// Log Levels (string-based for BaseConnector logging)
+// Note: Logger.ts has its own numeric LogLevel for internal use
 export enum LogLevel {
   DEBUG = 'debug',
   INFO = 'info',
   WARN = 'warn',
   ERROR = 'error',
+  SILENT = 'silent',
 }
 
 // ============================================

@@ -287,6 +287,7 @@ export interface QualysParsedReport {
   infoCount: number
   vulnerabilities: QualysVulnerability[]
   hosts: QualysHostInfo[]
+  warnings?: string[]  // API fallback or degraded mode warnings
 }
 
 export interface QualysHostInfo {
