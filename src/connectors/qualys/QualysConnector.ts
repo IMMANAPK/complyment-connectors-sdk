@@ -802,11 +802,11 @@ export class QualysConnector extends BaseConnector {
   // ============================================
 
   async getReports(): Promise<ConnectorResponse<QualysReport[]>> {
-    return this.get<QualysReport[]>('/api/2.0/fo/report/', { action: 'list' })
+    return this.get<QualysReport[]>(QUALYS_VM_API_PATHS.REPORT_LIST_V2, { action: 'list' })
   }
 
   async downloadReport(reportId: string): Promise<ConnectorResponse<Buffer>> {
-    return this.get<Buffer>('/api/2.0/fo/report/', {
+    return this.get<Buffer>(QUALYS_VM_API_PATHS.REPORT_LIST_V2, {
       action: 'fetch',
       id: reportId,
     })
@@ -817,7 +817,7 @@ export class QualysConnector extends BaseConnector {
   // ============================================
 
   async getComplianceControls(): Promise<ConnectorResponse<QualysComplianceControl[]>> {
-    return this.get<QualysComplianceControl[]>('/api/2.0/fo/compliance/control/', { action: 'list' })
+    return this.get<QualysComplianceControl[]>(QUALYS_VM_API_PATHS.COMPLIANCE_CONTROL, { action: 'list' })
   }
 
   // ============================================

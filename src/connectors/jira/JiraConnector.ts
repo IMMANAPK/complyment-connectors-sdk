@@ -22,6 +22,12 @@ import {
   JiraTransition,
   JiraSprint,
 } from './types'
+import {
+  JIRA_API_PATHS,
+  JIRA_AGILE_API_PATHS,
+  JIRA_DEFAULTS,
+  JIRA_SEVERITY_TO_PRIORITY,
+} from './constants'
 
 export class JiraConnector extends BaseConnector {
   constructor(jiraConfig: JiraConfig) {
@@ -52,7 +58,7 @@ export class JiraConnector extends BaseConnector {
 
   async testConnection(): Promise<boolean> {
     try {
-      await this.get('/rest/api/3/myself')
+      await this.get(JIRA_API_PATHS.MYSELF)
       return true
     } catch {
       return false
@@ -65,7 +71,7 @@ export class JiraConnector extends BaseConnector {
 
   async getProjects(): Promise<ConnectorResponse<JiraProject[]>> {
     return this.get<JiraProject[]>(
-      '/rest/api/3/project/search',
+      JIRA_API_PATHS.PROJECT_SEARCH,
       { maxResults: 100 },
       true,
     )
@@ -75,7 +81,7 @@ export class JiraConnector extends BaseConnector {
     projectKey: string,
   ): Promise<ConnectorResponse<JiraProject>> {
     return this.get<JiraProject>(
-      `/rest/api/3/project/${projectKey}`,
+      JIRA_API_PATHS.PROJECT_BY_KEY(projectKey),
       {},
       true,
     )
@@ -104,29 +110,21 @@ export class JiraConnector extends BaseConnector {
       if (filter?.createdBefore) jqlParts.push(`created <= "${filter.createdBefore}"`)
     }
 
-    // New /rest/api/3/search/jql requires bounded queries - must have at least one filter
-    // Add default filter if none provided (last 365 days)
+    // New search/jql endpoint requires bounded queries - must have at least one filter
+    // Add default filter if none provided
     if (jqlParts.length === 0) {
-      jqlParts.push('created >= -365d')
+      jqlParts.push(`created >= -${JIRA_DEFAULTS.DEFAULT_DATE_RANGE_DAYS}d`)
     }
 
     const jql = jqlParts.join(' AND ') + ' ORDER BY created DESC'
-
-    // Using new /rest/api/3/search/jql endpoint with GET method
-    // Reference: https://developer.atlassian.com/changelog/#CHANGE-2046
-    const fields = [
-      'summary', 'description', 'status', 'priority',
-      'issuetype', 'project', 'assignee', 'reporter',
-      'labels', 'created', 'updated', 'duedate',
-      'resolutiondate', 'components',
-    ].join(',')
+    const fields = JIRA_DEFAULTS.DEFAULT_ISSUE_FIELDS.join(',')
 
     const response = await this.get<JiraIssueListResponse>(
-      '/rest/api/3/search/jql',
+      JIRA_API_PATHS.ISSUE_SEARCH,
       {
         jql,
         startAt: filter?.startAt ?? 0,
-        maxResults: filter?.maxResults ?? 50,
+        maxResults: filter?.maxResults ?? JIRA_DEFAULTS.MAX_RESULTS,
         fields,
       },
     )
@@ -136,8 +134,8 @@ export class JiraConnector extends BaseConnector {
         response.data.issues,
         response.data.total,
         {
-          page: Math.floor((filter?.startAt ?? 0) / (filter?.maxResults ?? 50)) + 1,
-          limit: filter?.maxResults ?? 50,
+          page: Math.floor((filter?.startAt ?? 0) / (filter?.maxResults ?? JIRA_DEFAULTS.MAX_RESULTS)) + 1,
+          limit: filter?.maxResults ?? JIRA_DEFAULTS.MAX_RESULTS,
         },
       )
       return { ...response, data: paginated }
@@ -149,7 +147,7 @@ export class JiraConnector extends BaseConnector {
   async getIssueByKey(
     issueKey: string,
   ): Promise<ConnectorResponse<JiraIssue>> {
-    return this.get<JiraIssue>(`/rest/api/3/issue/${issueKey}`)
+    return this.get<JiraIssue>(JIRA_API_PATHS.ISSUE_BY_KEY(issueKey))
   }
 
   async createIssue(
@@ -185,7 +183,7 @@ export class JiraConnector extends BaseConnector {
       Object.assign(fields, request.customFields)
     }
 
-    return this.post<JiraIssue>('/rest/api/3/issue', { fields })
+    return this.post<JiraIssue>(JIRA_API_PATHS.ISSUE_CREATE, { fields })
   }
 
   async updateIssue(
@@ -200,11 +198,11 @@ export class JiraConnector extends BaseConnector {
     if (request.labels?.length) fields['labels'] = request.labels
     if (request.dueDate) fields['duedate'] = request.dueDate
 
-    return this.put(`/rest/api/3/issue/${issueKey}`, { fields })
+    return this.put(JIRA_API_PATHS.ISSUE_BY_KEY(issueKey), { fields })
   }
 
   async deleteIssue(issueKey: string): Promise<ConnectorResponse<void>> {
-    return this.delete(`/rest/api/3/issue/${issueKey}`)
+    return this.delete(JIRA_API_PATHS.ISSUE_BY_KEY(issueKey))
   }
 
   // ============================================
@@ -224,7 +222,7 @@ export class JiraConnector extends BaseConnector {
       },
     }))
 
-    return this.post<JiraIssue[]>('/rest/api/3/issue/bulk', { issueUpdates })
+    return this.post<JiraIssue[]>(JIRA_API_PATHS.ISSUE_BULK_CREATE, { issueUpdates })
   }
 
   // ============================================
@@ -234,9 +232,7 @@ export class JiraConnector extends BaseConnector {
   async getComments(
     issueKey: string,
   ): Promise<ConnectorResponse<JiraComment[]>> {
-    return this.get<JiraComment[]>(
-      `/rest/api/3/issue/${issueKey}/comment`,
-    )
+    return this.get<JiraComment[]>(JIRA_API_PATHS.ISSUE_COMMENTS(issueKey))
   }
 
   async addComment(
@@ -244,7 +240,7 @@ export class JiraConnector extends BaseConnector {
     body: string,
   ): Promise<ConnectorResponse<JiraComment>> {
     return this.post<JiraComment>(
-      `/rest/api/3/issue/${issueKey}/comment`,
+      JIRA_API_PATHS.ISSUE_COMMENTS(issueKey),
       {
         body: {
           type: 'doc',
@@ -267,9 +263,7 @@ export class JiraConnector extends BaseConnector {
   async getTransitions(
     issueKey: string,
   ): Promise<ConnectorResponse<JiraTransition[]>> {
-    return this.get<JiraTransition[]>(
-      `/rest/api/3/issue/${issueKey}/transitions`,
-    )
+    return this.get<JiraTransition[]>(JIRA_API_PATHS.ISSUE_TRANSITIONS(issueKey))
   }
 
   async transitionIssue(
@@ -302,7 +296,7 @@ export class JiraConnector extends BaseConnector {
       }
     }
 
-    return this.post(`/rest/api/3/issue/${issueKey}/transitions`, body)
+    return this.post(JIRA_API_PATHS.ISSUE_TRANSITIONS(issueKey), body)
   }
 
   // ============================================
@@ -313,7 +307,7 @@ export class JiraConnector extends BaseConnector {
     boardId: number,
   ): Promise<ConnectorResponse<JiraSprint[]>> {
     return this.get<JiraSprint[]>(
-      `/rest/agile/1.0/board/${boardId}/sprint`,
+      JIRA_AGILE_API_PATHS.BOARD_SPRINTS(boardId),
       { state: 'active,future' },
       true,
     )
@@ -338,19 +332,12 @@ export class JiraConnector extends BaseConnector {
     severity: 'critical' | 'high' | 'medium' | 'low',
     source: string,
   ): Promise<ConnectorResponse<JiraIssue>> {
-    const priorityMap = {
-      critical: 'Highest',
-      high: 'High',
-      medium: 'Medium',
-      low: 'Low',
-    } as const
-
     return this.createIssue({
       projectKey,
       summary: `[${source.toUpperCase()}] ${title}`,
       description: `**Source:** ${source}\n**Severity:** ${severity}\n\n${description}`,
       issueType: 'Bug',
-      priority: priorityMap[severity],
+      priority: JIRA_SEVERITY_TO_PRIORITY[severity],
       labels: ['security', source, severity],
     })
   }

@@ -6,8 +6,6 @@ import { BaseConnector } from '../../core/BaseConnector'
 import {
     ConnectorConfig,
     ConnectorResponse,
-    NormalizedVulnerability,
-    NormalizedAsset,
     AuthType,
     LogLevel,
 } from '../../core/types'
@@ -16,13 +14,15 @@ import {
     ManageEnginePatch,
     ManageEnginePatchFilter,
     ManageEnginePatchListResponse,
-    ManageEngineComputer,
     ManageEngineComputerFilter,
     ManageEngineComputerListResponse,
-    ManageEngineDeployment,
-    ManageEngineDeploymentFilter,
-    ManageEngineVulnerability,
 } from './types'
+import {
+    MANAGEENGINE_API_PATHS,
+    MANAGEENGINE_DEFAULTS,
+    MANAGEENGINE_PATCH_STATUS,
+    MANAGEENGINE_SEVERITY,
+} from './constants'
 
 export class ManageEngineConnector extends BaseConnector {
     private refreshToken: string
@@ -37,7 +37,7 @@ export class ManageEngineConnector extends BaseConnector {
                 type: AuthType.OAUTH2,
                 clientId: meConfig.clientId,
                 clientSecret: meConfig.clientSecret,
-                tokenUrl: `${meConfig.baseUrl}/oauth/token`,
+                tokenUrl: `${meConfig.baseUrl}${MANAGEENGINE_API_PATHS.OAUTH_TOKEN}`,
             },
             timeout: meConfig.timeout ?? 30000,
             retries: meConfig.retries ?? 3,
@@ -59,7 +59,7 @@ export class ManageEngineConnector extends BaseConnector {
         const response = await this.post<{
             access_token: string
             expires_in: number
-        }>('/oauth/token', {
+        }>(MANAGEENGINE_API_PATHS.OAUTH_TOKEN, {
             grant_type: 'refresh_token',
             client_id: this.clientId,
             client_secret: this.clientSecret,
@@ -74,7 +74,10 @@ export class ManageEngineConnector extends BaseConnector {
     async testConnection(): Promise<boolean> {
         try {
             await this.authenticate()
-            await this.get('/api/1.3/patch/allpatches', { pagenumber: 1, pagesize: 1 })
+            await this.get(MANAGEENGINE_API_PATHS.PATCHES, {
+                pagenumber: MANAGEENGINE_DEFAULTS.PAGE_NUMBER,
+                pagesize: 1,
+            })
             return true
         } catch {
             return false
@@ -89,8 +92,8 @@ export class ManageEngineConnector extends BaseConnector {
         filter?: ManageEnginePatchFilter,
     ): Promise<ConnectorResponse<ManageEnginePatchListResponse>> {
         const params: Record<string, unknown> = {
-            pagenumber: filter?.page ?? 1,
-            pagesize: filter?.limit ?? 50,
+            pagenumber: filter?.page ?? MANAGEENGINE_DEFAULTS.PAGE_NUMBER,
+            pagesize: filter?.limit ?? MANAGEENGINE_DEFAULTS.PAGE_SIZE,
         }
 
         if (filter?.severity?.length) params['severity'] = filter.severity.join(',')
@@ -98,7 +101,7 @@ export class ManageEngineConnector extends BaseConnector {
         if (filter?.rebootRequired !== undefined) params['rebootrequired'] = filter.rebootRequired
 
         return this.get<ManageEnginePatchListResponse>(
-            '/api/1.3/patch/allpatches',
+            MANAGEENGINE_API_PATHS.PATCHES,
             params,
         )
     }
@@ -107,30 +110,30 @@ export class ManageEngineConnector extends BaseConnector {
         computerId?: string,
     ): Promise<ConnectorResponse<ManageEnginePatchListResponse>> {
         const params: Record<string, unknown> = {
-            pagenumber: 1,
-            pagesize: 100,
-            patchstatus: 'Missing',
+            pagenumber: MANAGEENGINE_DEFAULTS.PAGE_NUMBER,
+            pagesize: MANAGEENGINE_DEFAULTS.MAX_PAGE_SIZE,
+            patchstatus: MANAGEENGINE_PATCH_STATUS.MISSING,
         }
 
         if (computerId) params['computerid'] = computerId
 
         return this.get<ManageEnginePatchListResponse>(
-            '/api/1.3/patch/allpatches',
+            MANAGEENGINE_API_PATHS.PATCHES,
             params,
         )
     }
 
     async getCriticalPatches(): Promise<ConnectorResponse<ManageEnginePatchListResponse>> {
         return this.getPatches({
-            severity: ['Critical', 'Important'],
-            status: ['Missing'],
+            severity: [MANAGEENGINE_SEVERITY.CRITICAL, MANAGEENGINE_SEVERITY.IMPORTANT],
+            status: [MANAGEENGINE_PATCH_STATUS.MISSING],
         })
     }
 
     async getPatchById(
         patchId: string,
     ): Promise<ConnectorResponse<ManageEnginePatch>> {
-        return this.get<ManageEnginePatch>(`/api/1.3/patch/${patchId}`)
+        return this.get<ManageEnginePatch>(MANAGEENGINE_API_PATHS.PATCH_BY_ID(patchId))
     }
 
     // ============================================
@@ -141,8 +144,8 @@ export class ManageEngineConnector extends BaseConnector {
         meFilter?: ManageEngineComputerFilter,
     ): Promise<ConnectorResponse<ManageEngineComputerListResponse>> {
         const params: Record<string, unknown> = {
-            pagenumber: meFilter?.page ?? 1,
-            pagesize: meFilter?.limit ?? 50,
+            pagenumber: meFilter?.page ?? MANAGEENGINE_DEFAULTS.PAGE_NUMBER,
+            pagesize: meFilter?.limit ?? MANAGEENGINE_DEFAULTS.PAGE_SIZE,
         }
 
         if (meFilter?.status?.length) params['status'] = meFilter.status.join(',')
@@ -151,7 +154,7 @@ export class ManageEngineConnector extends BaseConnector {
         if (meFilter?.computerName) params['computername'] = meFilter.computerName
 
         return this.get<ManageEngineComputerListResponse>(
-            '/api/1.3/patch/allsystems',
+            MANAGEENGINE_API_PATHS.COMPUTERS,
             params,
             true, // cache
         )

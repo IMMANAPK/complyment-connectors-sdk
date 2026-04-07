@@ -31,11 +31,17 @@ export const QUALYS_VM_API_PATHS = {
   // Host Detection
   HOST_DETECTIONS: '/api/4.0/fo/asset/host/vm/detection/',
 
-  // Reports
+  // Reports (v3.0)
   REPORT_LIST: '/api/3.0/fo/report/',
   REPORT_LAUNCH: '/api/3.0/fo/report/',
   REPORT_FETCH: '/api/3.0/fo/report/',
   REPORT_DELETE: '/api/3.0/fo/report/',
+
+  // Reports (v2.0 - legacy)
+  REPORT_LIST_V2: '/api/2.0/fo/report/',
+
+  // Compliance
+  COMPLIANCE_CONTROL: '/api/2.0/fo/compliance/control/',
 
   // Knowledge Base
   VULN_KB: '/api/3.0/fo/knowledge_base/vuln/',

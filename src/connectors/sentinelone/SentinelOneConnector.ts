@@ -6,7 +6,6 @@ import { BaseConnector } from '../../core/BaseConnector'
 import {
   ConnectorConfig,
   ConnectorResponse,
-  NormalizedVulnerability,
   NormalizedAsset,
   NormalizedThreat,
   AuthType,
@@ -26,6 +25,11 @@ import {
   MitigationRequest,
   MitigationResponse,
 } from './types'
+import {
+  SENTINELONE_API_PATHS,
+  SENTINELONE_DEFAULTS,
+  SENTINELONE_THREAT_STATUS_MAP,
+} from './constants'
 
 export class SentinelOneConnector extends BaseConnector {
   constructor(s1Config: SentinelOneConfig) {
@@ -56,7 +60,7 @@ export class SentinelOneConnector extends BaseConnector {
 
   async testConnection(): Promise<boolean> {
     try {
-      await this.get('/web/api/v2.1/system/status')
+      await this.get(SENTINELONE_API_PATHS.SYSTEM_STATUS)
       return true
     } catch {
       return false
@@ -71,7 +75,7 @@ export class SentinelOneConnector extends BaseConnector {
     filter?: SentinelOneAgentFilter,
   ): Promise<ConnectorResponse<SentinelOneAgentListResponse>> {
     const params: Record<string, unknown> = {
-      limit: filter?.limit ?? 50,
+      limit: filter?.limit ?? SENTINELONE_DEFAULTS.LIMIT,
     }
 
     if (filter?.status?.length) params['isActive'] = filter.status.includes('connected')
@@ -81,7 +85,7 @@ export class SentinelOneConnector extends BaseConnector {
     if (filter?.cursor) params['cursor'] = filter.cursor
 
     return this.get<SentinelOneAgentListResponse>(
-      '/web/api/v2.1/agents',
+      SENTINELONE_API_PATHS.AGENTS,
       params,
       true, // cache
     )
@@ -90,7 +94,7 @@ export class SentinelOneConnector extends BaseConnector {
   async getAgentById(
     agentId: string,
   ): Promise<ConnectorResponse<SentinelOneAgent>> {
-    return this.get<SentinelOneAgent>(`/web/api/v2.1/agents/${agentId}`)
+    return this.get<SentinelOneAgent>(SENTINELONE_API_PATHS.AGENT_BY_ID(agentId))
   }
 
   async getInfectedAgents(): Promise<ConnectorResponse<SentinelOneAgentListResponse>> {
@@ -100,19 +104,19 @@ export class SentinelOneConnector extends BaseConnector {
   async disconnectAgentFromNetwork(
     agentId: string,
   ): Promise<ConnectorResponse<void>> {
-    return this.post(`/web/api/v2.1/agents/${agentId}/actions/disconnect`)
+    return this.post(SENTINELONE_API_PATHS.AGENT_DISCONNECT(agentId))
   }
 
   async reconnectAgentToNetwork(
     agentId: string,
   ): Promise<ConnectorResponse<void>> {
-    return this.post(`/web/api/v2.1/agents/${agentId}/actions/connect`)
+    return this.post(SENTINELONE_API_PATHS.AGENT_CONNECT(agentId))
   }
 
   async initiateAgentScan(
     agentId: string,
   ): Promise<ConnectorResponse<void>> {
-    return this.post(`/web/api/v2.1/agents/${agentId}/actions/initiate-scan`)
+    return this.post(SENTINELONE_API_PATHS.AGENT_SCAN(agentId))
   }
 
   // ============================================
@@ -123,7 +127,7 @@ export class SentinelOneConnector extends BaseConnector {
     filter?: SentinelOneThreatFilter,
   ): Promise<ConnectorResponse<SentinelOneThreatListResponse>> {
     const params: Record<string, unknown> = {
-      limit: filter?.limit ?? 50,
+      limit: filter?.limit ?? SENTINELONE_DEFAULTS.LIMIT,
     }
 
     if (filter?.status?.length) params['mitigationStatuses'] = filter.status.join(',')
@@ -135,7 +139,7 @@ export class SentinelOneConnector extends BaseConnector {
     if (filter?.createdBefore) params['createdAt__lte'] = filter.createdBefore
 
     return this.get<SentinelOneThreatListResponse>(
-      '/web/api/v2.1/threats',
+      SENTINELONE_API_PATHS.THREATS,
       params,
     )
   }
@@ -160,7 +164,7 @@ export class SentinelOneConnector extends BaseConnector {
     request: MitigationRequest,
   ): Promise<ConnectorResponse<MitigationResponse>> {
     return this.post<MitigationResponse>(
-      `/web/api/v2.1/threats/mitigate/${request.action}`,
+      SENTINELONE_API_PATHS.THREAT_MITIGATE(request.action),
       { filter: { ids: request.threatIds } },
     )
   }
@@ -197,9 +201,9 @@ export class SentinelOneConnector extends BaseConnector {
   // ============================================
 
   async getActivities(
-    limit = 50,
+    limit = SENTINELONE_DEFAULTS.LIMIT,
   ): Promise<ConnectorResponse<SentinelOneActivity[]>> {
-    return this.get<SentinelOneActivity[]>('/web/api/v2.1/activities', {
+    return this.get<SentinelOneActivity[]>(SENTINELONE_API_PATHS.ACTIVITIES, {
       limit,
       sortBy: 'createdAt',
       sortOrder: 'desc',
@@ -211,14 +215,14 @@ export class SentinelOneConnector extends BaseConnector {
   // ============================================
 
   async getGroups(): Promise<ConnectorResponse<SentinelOneGroup[]>> {
-    return this.get<SentinelOneGroup[]>('/web/api/v2.1/groups', {
-      limit: 100,
+    return this.get<SentinelOneGroup[]>(SENTINELONE_API_PATHS.GROUPS, {
+      limit: SENTINELONE_DEFAULTS.MAX_LIMIT,
     }, true)
   }
 
   async getSites(): Promise<ConnectorResponse<SentinelOneSite[]>> {
-    return this.get<SentinelOneSite[]>('/web/api/v2.1/sites', {
-      limit: 100,
+    return this.get<SentinelOneSite[]>(SENTINELONE_API_PATHS.SITES, {
+      limit: SENTINELONE_DEFAULTS.MAX_LIMIT,
     }, true)
   }
 
@@ -275,13 +279,6 @@ export class SentinelOneConnector extends BaseConnector {
   private mapThreatStatus(
     status: string,
   ): 'active' | 'resolved' | 'investigating' {
-    const map: Record<string, 'active' | 'resolved' | 'investigating'> = {
-      active: 'active',
-      suspicious: 'investigating',
-      mitigated: 'resolved',
-      resolved: 'resolved',
-      blocked: 'resolved',
-    }
-    return map[status] ?? 'active'
+    return SENTINELONE_THREAT_STATUS_MAP[status] ?? 'active'
   }
 }
