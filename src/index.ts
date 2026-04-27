@@ -197,5 +197,5 @@ export type { WorkflowResult } from './ai/workflows/AgentWorkflow'
 // SDK Version
 // ============================================
 
-export const SDK_VERSION = '0.3.0'
+export const SDK_VERSION = '0.3.2'
 export const SDK_NAME = '@skill-mine/complyment-connectors-sdk'
