@@ -4,7 +4,7 @@
 
 A TypeScript SDK that abstracts 8+ enterprise security tool integrations with built-in AI agent compatibility, circuit breakers, rate limiting, and human-in-the-loop controls.
 
-[![npm version](https://img.shields.io/badge/npm-0.3.0-blue)](https://www.npmjs.com/package/@skill-mine/complyment-connectors-sdk)
+[![npm version](https://img.shields.io/badge/npm-0.3.2-blue)](https://www.npmjs.com/package/@skill-mine/complyment-connectors-sdk)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](#)
 [![License](https://img.shields.io/badge/license-ISC-green)](#)
@@ -13,7 +13,7 @@ A TypeScript SDK that abstracts 8+ enterprise security tool integrations with bu
 
 ## Features
 
-- **8 Connectors** — Qualys, SentinelOne, Checkpoint, ManageEngine, Jira, Zoho, Tenable.io, Tenable.sc
+- **8 Connectors** — Qualys, SentinelOne, Check Point, ManageEngine, Jira, Zoho, Tenable.io, Tenable.sc
 - **AI Agent Ready** — MCP, LangChain, Vercel AI SDK, OpenAI Agents SDK, Google ADK
 - **Resilience** — Circuit breaker, retry with backoff, rate limiting, caching
 - **Observability** — OpenTelemetry tracing, structured logging, audit logs
@@ -54,6 +54,66 @@ registry.register('qualys', qualys)
 const vulns = await qualys.getCriticalVulnerabilities()
 console.log(vulns.data)
 ```
+
+---
+
+## Playground
+
+A built-in web UI for testing any connector against real credentials — no code required.
+
+```bash
+npm run playground        # build + start
+npm run playground:start  # start without rebuilding
+```
+
+Open **http://localhost:4000** in your browser.
+
+### Connector Playground
+
+Select a connector from the sidebar, enter your credentials, pick an operation, edit params, and run it. Results are displayed as syntax-highlighted JSON with timing info.
+
+All credentials are saved to `localStorage` — you only enter them once.
+
+### AI Playground
+
+Ask a question in plain English. The AI picks the right SDK operation, executes it against your real connector, and returns a plain-English summary of the findings.
+
+- Supports **OpenAI** (`gpt-4o-mini`) and **Anthropic** (`claude-haiku-4-5`)
+- Enter your API key once — saved to `localStorage` per provider
+- Shows which operation the AI chose and what params it used
+- Raw JSON result available alongside the summary
+
+**Example queries:**
+> "Show me the 10 most critical vulnerabilities"
+> "Which endpoints have active threats right now?"
+> "List all open security issues in Jira"
+
+### Adding a new connector to the Playground
+
+Edit `playground/connectors.registry.cjs` — add a single entry with connector metadata. Ops are **auto-discovered** from the SDK class at startup; no op lists to maintain.
+
+```js
+// playground/connectors.registry.cjs
+module.exports = {
+  myconnector: {
+    sdkClass: 'MyConnector',          // exact export name from dist/index.js
+    label:    'My Connector',
+    desc:     'What it does',
+    color:    '#4caf50',
+    fields: [
+      { key: 'baseUrl', label: 'Base URL', type: 'text', placeholder: 'https://...', required: true },
+      { key: 'apiKey',  label: 'API Key',  type: 'password', placeholder: '••••',    required: true },
+    ],
+    // opsConfig is optional — only needed for custom default params or positional args
+    opsConfig: {
+      getThings: { params: { page: 1, limit: 10 } },
+      deleteById: { args: ['id'], params: { id: '' } },
+    },
+  },
+}
+```
+
+Restart the server — every public method on `MyConnector` appears automatically.
 
 ---
 
