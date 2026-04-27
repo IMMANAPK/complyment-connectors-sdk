@@ -23,7 +23,9 @@
     "eval:quick": "node bin/evaluate.cjs --quick",
     "setup": "node bin/setup.cjs",
     "setup:mock": "node bin/setup.cjs --mode=mock",
-    "setup:real": "node bin/setup.cjs --mode=real"
+    "setup:real": "node bin/setup.cjs --mode=real",
+    "playground": "npm run build && node playground/server.cjs",
+    "playground:start": "node playground/server.cjs"
   },
   "keywords": [
     "connectors",

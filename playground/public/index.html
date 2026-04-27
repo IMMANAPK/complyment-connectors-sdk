@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Complyment SDK Playground</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">C/</div>
+      <div class="brand-name">Complyment <span>SDK</span></div>
+      <div class="brand-product">Playground</div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-meta">
+        <svg class="heartbeat" viewBox="0 0 24 14" fill="none" aria-hidden="true">
+          <polyline points="2,11 6,11 8,2 10,14 12,7 14,11 22,11" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"></polyline>
+        </svg>
+        <span id="connector-count">...</span>
+      </div>
+      <div class="topbar-meta">live sdk</div>
+      <div class="topbar-actions" aria-label="Playground controls">
+        <button class="icon-button" id="connectors-toggle" type="button" aria-label="Open connectors" title="Connectors">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4" y="5" width="16" height="4" rx="1.5"></rect>
+            <rect x="4" y="10" width="16" height="4" rx="1.5"></rect>
+            <rect x="4" y="15" width="16" height="4" rx="1.5"></rect>
+          </svg>
+        </button>
+        <button class="icon-button" id="ai-mode-button" type="button" aria-label="Open AI assistant" title="AI Assistant">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3l1.7 5.1L19 10l-5.3 1.9L12 17l-1.7-5.1L5 10l5.3-1.9L12 3z"></path>
+            <path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15z"></path>
+          </svg>
+        </button>
+        <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch theme" title="Switch theme">
+          <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"></path>
+          </svg>
+          <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 15.5A8.5 8.5 0 118.5 4 6.5 6.5 0 0020 15.5z"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="ver">v0.3.2</div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <div class="panels">
+      <aside class="sidebar" id="connectors-drawer">
+        <div class="sidebar-section">
+          <div class="sidebar-title-row">
+            <div class="sidebar-label">Connectors</div>
+          </div>
+          <div id="connector-list"></div>
+        </div>
+      </aside>
+
+      <main class="workspace" id="workspace"></main>
+      <section class="exec-panel" id="exec-panel"></section>
+    </div>
+
+    <section class="console-zone">
+      <div class="console-header">
+        <div class="console-tabs">
+          <button class="console-tab active" type="button" data-tab="logs">Logs</button>
+          <button class="console-tab" type="button" data-tab="response">Response</button>
+          <button class="console-tab" type="button" data-tab="trace">Trace</button>
+        </div>
+        <div class="console-meta">
+          <span class="status-pill" id="status-pill">IDLE</span>
+          <button class="console-clear" type="button" id="copy-console">copy</button>
+          <button class="console-clear" type="button" id="clear-console">clear</button>
+        </div>
+      </div>
+      <div class="console-body" id="console-body"></div>
+    </section>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
