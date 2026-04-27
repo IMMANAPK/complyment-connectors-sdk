@@ -1,6 +1,6 @@
 {
   "name": "@skill-mine/complyment-connectors-sdk",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Enterprise security tool connectors SDK by Skill-Mine Technology",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
