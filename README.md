@@ -4,7 +4,7 @@
 
 A TypeScript SDK that abstracts 8+ enterprise security tool integrations with built-in AI agent compatibility, circuit breakers, rate limiting, and human-in-the-loop controls.
 
-[![npm version](https://img.shields.io/badge/npm-0.3.3-blue)](https://www.npmjs.com/package/@skill-mine/complyment-connectors-sdk)
+[![npm version](https://img.shields.io/badge/npm-0.3.4-blue)](https://www.npmjs.com/package/@skill-mine/complyment-connectors-sdk)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](#)
 [![License](https://img.shields.io/badge/license-ISC-green)](#)
