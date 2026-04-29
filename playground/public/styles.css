@@ -607,15 +607,23 @@ button { cursor: pointer; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--mono);
-  font-size: 8px;
+  font-size: 9px;
   flex: 0 0 auto;
+  transition: border-color 0.2s, color 0.2s;
 }
-.state-step.done .step-dot { border-color: rgba(16,185,129,0.42); color: var(--green); }
-.state-step.running .step-dot { border-color: rgba(14,184,160,0.42); color: var(--accent); }
-.state-step.error .step-dot { border-color: rgba(239,68,68,0.42); color: var(--red); }
+.step-dot-idle { opacity: 0.35; }
+.state-step.done .step-dot  { border-color: rgba(16,185,129,0.5); color: var(--green); background: rgba(16,185,129,0.08); }
+.state-step.running .step-dot { border-color: rgba(14,184,160,0.6); color: var(--accent); background: rgba(14,184,160,0.08); }
+.state-step.error .step-dot { border-color: rgba(239,68,68,0.5); color: var(--red); background: rgba(239,68,68,0.08); }
 .state-step.done, .state-step.running { color: var(--muted); }
 .state-step.error { color: var(--red); }
+
+@keyframes trace-spin {
+  0%   { box-shadow: 0 0 0 0 rgba(14,184,160,0.55); }
+  70%  { box-shadow: 0 0 0 4px rgba(14,184,160,0); }
+  100% { box-shadow: 0 0 0 0 rgba(14,184,160,0); }
+}
+.step-dot-spin { animation: trace-spin 1s ease-out infinite; }
 
 .console-zone {
   height: 228px;

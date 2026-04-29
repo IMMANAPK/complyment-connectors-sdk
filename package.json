@@ -25,7 +25,13 @@
     "setup:mock": "node bin/setup.cjs --mode=mock",
     "setup:real": "node bin/setup.cjs --mode=real",
     "playground": "npm run build && node playground/server.cjs",
-    "playground:start": "node playground/server.cjs"
+    "playground:start": "node playground/server.cjs",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:ui": "npm run build && playwright test --ui",
+    "test:e2e:debug": "npm run build && playwright test --debug",
+    "test:connectors": "npm run build && playwright test tests/e2e/connectors/connectors.spec.ts",
+    "test:connector": "npm run build && playwright test tests/e2e/connectors/connectors.spec.ts --grep",
+    "test:full": "npm run build && playwright test tests/e2e/connectors --grep"
   },
   "keywords": [
     "connectors",
@@ -37,6 +43,7 @@
   "author": "Skill-Mine Technology",
   "license": "ISC",
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/express": "^5.0.6",
     "@types/node": "^25.3.0",
     "express": "^5.2.1",

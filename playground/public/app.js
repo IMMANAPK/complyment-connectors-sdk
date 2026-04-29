@@ -392,11 +392,12 @@ function renderAIExecPanel() {
 
 function renderTrace() {
   if (!traceSteps.length) {
-    return '<div class="state-step"><span class="step-dot">-</span><span>Run an operation to trace execution</span></div>'
+    return '<div class="state-step"><span class="step-dot step-dot-idle">·</span><span>Run an operation to trace execution</span></div>'
   }
-  return traceSteps.map((step, index) => `
+  const icon = { done: '✓', error: '✕', running: '', pending: '·' }
+  return traceSteps.map(step => `
     <div class="state-step ${escapeHTML(step.state)}">
-      <span class="step-dot">${step.state === 'done' ? 'v' : step.state === 'error' ? 'x' : step.state === 'running' ? '*' : index + 1}</span>
+      <span class="step-dot ${step.state === 'running' ? 'step-dot-spin' : ''}">${escapeHTML(icon[step.state] ?? '·')}</span>
       <span>${escapeHTML(step.label)}</span>
     </div>
   `).join('')
@@ -531,6 +532,7 @@ function renderConsole() {
       </div>
     `).join('') : '<div class="empty-state">Playground ready. Select a connector and run an operation.</div>'
   } else if (consoleTab === 'response') {
+    window.__playgroundLastResult = lastResult ?? null
     body.innerHTML = lastResult ? renderResultView(lastResult) : '<div class="empty-state">No response yet.</div>'
   } else {
     body.innerHTML = traceSteps.length ? renderTrace() : '<div class="empty-state">Execution trace appears after a run.</div>'

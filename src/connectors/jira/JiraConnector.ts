@@ -100,14 +100,24 @@ export class JiraConnector extends BaseConnector {
     if (filter?.jql) {
       jqlParts.push(filter.jql)
     } else {
-      if (filter?.projectKey) jqlParts.push(`project = "${filter.projectKey}"`)
-      if (filter?.status?.length) jqlParts.push(`status in (${filter.status.map((s) => `"${s}"`).join(',')})`)
-      if (filter?.priority?.length) jqlParts.push(`priority in (${filter.priority.map((p) => `"${p}"`).join(',')})`)
-      if (filter?.issueType?.length) jqlParts.push(`issuetype in (${filter.issueType.map((t) => `"${t}"`).join(',')})`)
-      if (filter?.assigneeAccountId) jqlParts.push(`assignee = "${filter.assigneeAccountId}"`)
-      if (filter?.labels?.length) jqlParts.push(`labels in (${filter.labels.map((l) => `"${l}"`).join(',')})`)
-      if (filter?.createdAfter) jqlParts.push(`created >= "${filter.createdAfter}"`)
-      if (filter?.createdBefore) jqlParts.push(`created <= "${filter.createdBefore}"`)
+      const jqlMap: [keyof JiraIssueFilter, string, 'eq' | 'in' | 'gte' | 'lte'][] = [
+        ['projectKey',        'project',   'eq'],
+        ['status',            'status',    'in'],
+        ['priority',          'priority',  'in'],
+        ['issueType',         'issuetype', 'in'],
+        ['assigneeAccountId', 'assignee',  'eq'],
+        ['labels',            'labels',    'in'],
+        ['createdAfter',      'created',   'gte'],
+        ['createdBefore',     'created',   'lte'],
+      ]
+      for (const [key, jqlField, op] of jqlMap) {
+        const val = filter?.[key]
+        if (!val || (Array.isArray(val) && !val.length)) continue
+        if (op === 'in') jqlParts.push(`${jqlField} in (${(val as string[]).map(v => `"${v}"`).join(',')})`)
+        else if (op === 'gte') jqlParts.push(`${jqlField} >= "${val}"`)
+        else if (op === 'lte') jqlParts.push(`${jqlField} <= "${val}"`)
+        else jqlParts.push(`${jqlField} = "${val}"`)
+      }
     }
 
     // New search/jql endpoint requires bounded queries - must have at least one filter
@@ -317,7 +327,10 @@ export class JiraConnector extends BaseConnector {
     boardId: number,
   ): Promise<ConnectorResponse<JiraSprint | null>> {
     const response = await this.getSprints(boardId)
-    const active = response.data?.find((s) => s.state === 'active') ?? null
+    const sprints = Array.isArray(response.data)
+      ? response.data
+      : ((response.data as unknown as { values?: JiraSprint[] })?.values ?? [])
+    const active = sprints.find((s) => s.state === 'active') ?? null
     return { ...response, data: active }
   }
 

@@ -29,3 +29,12 @@ coverage/
 # Temp
 *.tmp
 *.temp
+.env.e2e
+
+# E2E test artifacts
+test-results/
+playwright-report/
+
+# Tool/IDE artifacts
+.codex
+.serena/

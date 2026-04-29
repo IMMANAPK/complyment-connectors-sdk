@@ -5,8 +5,8 @@
     "moduleResolution": "bundler",
     "declaration": true,
     "strict": true,
-    "outDir": "dist",
-    "rootDir": "src"
+    "types": ["node"],
+    "outDir": "dist"
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "tests/e2e/**/*", "playwright.config.ts"]
 }
