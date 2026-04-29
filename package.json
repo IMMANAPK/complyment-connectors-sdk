@@ -42,6 +42,9 @@
   ],
   "author": "Skill-Mine Technology",
   "license": "ISC",
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/express": "^5.0.6",

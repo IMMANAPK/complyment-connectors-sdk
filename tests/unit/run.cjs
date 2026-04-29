@@ -340,7 +340,7 @@ async function runPackageImportTests() {
     assert(Boolean(sdk.QualysConnector), 'QualysConnector should be exported')
     assert(Boolean(sdk.TenableIoConnector), 'TenableIoConnector should be exported')
     assert(Boolean(sdk.GoogleADKAdapter), 'GoogleADKAdapter should be exported')
-    assert(sdk.SDK_VERSION === '0.3.4', 'SDK version should match package version')
+    assert(sdk.SDK_VERSION === '0.3.5', 'SDK version should match package version')
   })
 
   await test('ESM package import exposes primary public API', async () => {
@@ -348,7 +348,7 @@ async function runPackageImportTests() {
     assert(Boolean(esm.QualysConnector), 'QualysConnector should be exported from ESM build')
     assert(Boolean(esm.TenableIoConnector), 'TenableIoConnector should be exported from ESM build')
     assert(Boolean(esm.GoogleADKAdapter), 'GoogleADKAdapter should be exported from ESM build')
-    assert(esm.SDK_VERSION === '0.3.4', 'ESM SDK version should match package version')
+    assert(esm.SDK_VERSION === '0.3.5', 'ESM SDK version should match package version')
   })
 }
 
