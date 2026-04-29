@@ -4,7 +4,7 @@
 
 A TypeScript SDK that abstracts 8+ enterprise security tool integrations with built-in AI agent compatibility, circuit breakers, rate limiting, and human-in-the-loop controls.
 
-[![npm version](https://img.shields.io/badge/npm-0.3.2-blue)](https://www.npmjs.com/package/@skill-mine/complyment-connectors-sdk)
+[![npm version](https://img.shields.io/badge/npm-0.3.3-blue)](https://www.npmjs.com/package/@skill-mine/complyment-connectors-sdk)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](#)
 [![License](https://img.shields.io/badge/license-ISC-green)](#)
@@ -468,10 +468,10 @@ TENABLE_SC_SECRET_KEY=your_secret_key
 ## Built Output
 ```
 dist/
-├── index.js      163 KB  (CJS - Node.js)
-├── index.mjs     159 KB  (ESM - Bundlers)
-├── index.d.ts     74 KB  (TypeScript)
-└── index.d.mts    74 KB  (TypeScript ESM)
+├── index.js      262 KB  (CJS - Node.js)
+├── index.mjs     255 KB  (ESM - Bundlers)
+├── index.d.ts    128 KB  (TypeScript)
+└── index.d.mts   128 KB  (TypeScript ESM)
 ```
 
 ---
@@ -522,6 +522,85 @@ npm run pack:dry
 # Run the full local gate
 npm run verify
 ```
+
+---
+
+## E2E Testing (Playwright)
+
+Real browser tests that run against live connector APIs — no mocks.
+
+### Setup
+
+Copy the credentials template and fill in your keys:
+
+```bash
+cp .env.e2e.example .env.e2e
+# edit .env.e2e with real credentials
+```
+
+Env var naming convention — `CONNECTORID_FIELD_KEY` in UPPER_SNAKE_CASE:
+
+```bash
+# Jira (only 3 vars needed — projectKey and boardId are auto-discovered)
+JIRA_BASE_URL=https://your-org.atlassian.net
+JIRA_EMAIL=your@email.com
+JIRA_API_TOKEN=your_api_token
+
+# Qualys
+QUALYS_BASE_URL=https://qualysapi.qualys.com
+QUALYS_USERNAME=your_username
+QUALYS_PASSWORD=your_password
+
+# Tenable.io
+TENABLE_IO_ACCESS_KEY=your_access_key
+TENABLE_IO_SECRET_KEY=your_secret_key
+```
+
+### Test commands
+
+```bash
+# Run all e2e tests (all connectors with credentials found in .env.e2e)
+npm run test:e2e
+
+# Generic read-only tests auto-generated for every connector in the registry
+npm run test:connectors
+
+# Full API suite for a specific connector (e.g. Jira — 18 operations end-to-end)
+npm run test:full -- "Jira"
+
+# Open Playwright UI (interactive test runner)
+npm run test:e2e:ui
+```
+
+### How it works
+
+- **One spec per connector is not needed** — `connectors.spec.ts` generates tests dynamically from `playground/connectors.registry.cjs`. Adding a new connector to the registry gives it tests automatically.
+- **Headed browser with visual cursor** — tests run in a real Chromium window with an orange cursor indicator and click flash animation so you can watch interactions happen.
+- **Auto-discovery** — the Jira suite discovers `projectKey` and `boardId` from the API at startup; no extra env vars required.
+- **Scalable** — the same two test files cover every connector, no matter how many are added.
+
+### Full Jira suite (18 operations)
+
+The `jira-full.spec.ts` suite covers every Jira operation end-to-end in sequence:
+
+| # | Operation | Description |
+|---|---|---|
+| 01 | `testConnection` | Verify credentials |
+| 02 | `getProjects` | List all projects |
+| 03 | `getProjectByKey` | Fetch auto-discovered project |
+| 04 | `getIssues` | Search issues by project |
+| 05 | `createIssue` | Create a test issue |
+| 06 | `getIssueByKey` | Read the created issue |
+| 07 | `updateIssue` | Update summary + priority |
+| 08 | `addComment` | Add a comment |
+| 09 | `getComments` | Read comments |
+| 10 | `getTransitions` | List available transitions |
+| 11 | `transitionIssue` | Change issue status |
+| 12 | `bulkCreateIssues` | Create 2 issues in one call |
+| 13 | `createSecurityTicket` | Create security-labelled ticket |
+| 14 | `getSprints` | List board sprints |
+| 15 | `getActiveSprint` | Get current active sprint |
+| 16–18 | `deleteIssue` | Cleanup all created issues |
 
 ---
 
