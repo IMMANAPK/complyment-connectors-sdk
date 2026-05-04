@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 'use strict'
+require('dotenv').config()
 const path = require('path')
 const fs = require('fs')
 const { run } = require('../../src/codegen/pipeline/orchestrator.cjs')

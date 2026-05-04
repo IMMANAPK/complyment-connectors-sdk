@@ -1,4 +1,5 @@
 'use strict'
+require('dotenv').config()
 const express  = require('express')
 const path     = require('path')
 const fs       = require('fs')
@@ -174,9 +175,20 @@ app.get('/api/info', (req, res) => {
   res.json({ provider: getProviderName(), version: '0.3.5' })
 })
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Generator UI server running at http://localhost:${PORT}`)
   console.log(`AI provider: ${getProviderName()}`)
+})
+
+server.on('error', err => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\nError: Port ${PORT} is already in use.`)
+    console.error(`Run this to free it:  kill $(lsof -ti :${PORT})`)
+    console.error(`Or set a different port:  GENERATOR_PORT=4002 npm run generate:ui\n`)
+  } else {
+    console.error(`Server error: ${err.message}`)
+  }
+  process.exit(1)
 })
 
 function waitForHITL(runId, step, summary) {
