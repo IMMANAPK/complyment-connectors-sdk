@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connector Generator — Complyment SDK</title>
+  <link rel="stylesheet" href="./generator.css" />
+  <link id="hljs-theme" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" />
+</head>
+<body>
+
+  <!-- ── Background 3D canvas ──────────────────────────── -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- ── Topbar ─────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <a class="logo" href="./index.html">
+        <span class="logo-mark">C</span>
+        <span class="logo-name">Complyment</span>
+      </a>
+      <span class="topbar-divider"></span>
+      <span class="topbar-page">Connector Generator</span>
+    </div>
+    <div class="topbar-right">
+      <div class="ai-badge" id="ai-badge">
+        <span class="ai-dot"></span>
+        <span id="ai-name">Claude</span>
+      </div>
+      <div class="seg-ctrl">
+        <button class="seg-btn active" id="mode-interactive">Interactive</button>
+        <button class="seg-btn" id="mode-auto">Auto</button>
+      </div>
+      <button class="tbar-btn" id="theme-btn" title="Toggle light/dark mode" aria-label="Toggle theme">
+        <svg id="theme-icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="theme-icon-sun"  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+      <button class="tbar-btn" id="settings-btn" title="Step settings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <button class="tbar-btn" id="reset-btn" title="Reset">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Settings panel (slides under topbar) ─────────── -->
+  <div class="settings-panel hidden" id="settings-panel">
+    <div class="sp-head">
+      <span class="sp-title">Settings</span>
+      <span class="sp-sub">Configure HITL steps and display options.</span>
+    </div>
+    <div class="sp-row sp-row--top">
+      <div class="sp-row-info">
+        <strong>Low Power Mode</strong>
+        <span>Disables 3D background animation</span>
+      </div>
+      <label class="toggle-wrap">
+        <input type="checkbox" id="sp-low-power" />
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span class="toggle-label">Off</span>
+      </label>
+    </div>
+    <div class="sp-head sp-head--sub">
+      <span class="sp-title">HITL Step Configuration</span>
+      <span class="sp-sub">Toggle interactive mode per step. Active on next run.</span>
+    </div>
+    <div class="sp-steps" id="sp-steps"></div>
+  </div>
+
+  <!-- ── Resume dialog ─────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="resume-overlay">
+    <div class="modal-box">
+      <div class="modal-head">
+        <span class="modal-title">Resume a saved run</span>
+        <button class="modal-close" id="resume-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="resume-list" id="resume-list">
+          <div class="resume-loading">Loading saved runs…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Shell ──────────────────────────────────────────── -->
+  <div class="shell">
+
+    <!-- ── Sidebar ──────────────────────────────────────── -->
+    <aside class="sidebar">
+
+      <div class="run-block">
+        <div class="run-top">
+          <span class="run-label">Run</span>
+          <code class="run-id" id="run-id">—</code>
+        </div>
+        <div class="prog-wrap">
+          <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+          <span class="prog-text" id="prog-text">0 / 9</span>
+        </div>
+        <div class="run-kpis">
+          <div class="kpi"><span>Mode</span><strong id="kpi-mode">—</strong></div>
+          <div class="kpi"><span>Confidence</span><strong id="kpi-conf">—</strong></div>
+          <div class="kpi"><span>Score</span><strong id="kpi-score">—</strong></div>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Pipeline</div>
+        <nav class="step-nav" id="step-nav"></nav>
+      </div>
+
+      <div class="sb-section" id="files-section" style="display:none">
+        <div class="sb-label">Generated Files</div>
+        <div class="file-list" id="file-list"></div>
+      </div>
+
+    </aside>
+
+    <!-- ── Main ─────────────────────────────────────────── -->
+    <main class="main" id="main">
+
+      <!-- Upload screen -->
+      <div class="upload-screen" id="upload-screen">
+        <div class="upload-grid"></div>
+        <div class="upload-content">
+          <div class="upload-badge">AI-Powered SDK Generator</div>
+          <h1 class="upload-h1">Generate a Connector<br/><span>in minutes, not days</span></h1>
+          <p class="upload-sub">Upload any API documentation — PDF, OpenAPI spec, Markdown, or plain text. AI validates, generates, tests, reviews, and raises a PR automatically.</p>
+
+          <label class="dropzone" for="doc-upload" id="dropzone">
+            <input id="doc-upload" type="file" accept=".pdf,.json,.yaml,.yml,.md,.txt,.html" />
+            <div class="dz-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <p class="dz-title">Drop your API document here</p>
+            <p class="dz-sub">PDF · OpenAPI JSON/YAML · Markdown · HTML · plain text</p>
+            <span class="dz-btn">Browse files</span>
+          </label>
+
+          <div class="demo-row">
+            <span class="demo-label">Try a demo:</span>
+            <button class="demo-pill" data-demo="CrowdStrike Falcon">CrowdStrike</button>
+            <button class="demo-pill" data-demo="Qualys VMDR">Qualys update</button>
+            <button class="demo-pill" data-demo="SentinelOne Singularity">SentinelOne</button>
+          </div>
+
+          <form class="url-row" id="url-form">
+            <input id="doc-url" type="url" placeholder="Paste public API docs URL or Notion page" />
+            <button class="url-btn" type="submit">Use URL</button>
+          </form>
+
+          <div class="gen-options-row" id="gen-options-row">
+            <label class="gen-opt-toggle">
+              <input type="checkbox" id="opt-run-tests" />
+              <span class="got-track"><span class="got-thumb"></span></span>
+              <span class="got-label">Run Playwright Tests</span>
+            </label>
+          </div>
+
+          <div class="resume-row" id="resume-row" style="display:none">
+            <button class="resume-btn" id="resume-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+              Resume saved run
+            </button>
+          </div>
+
+          <div class="flow-cards">
+            <div class="flow-card">
+              <div class="flow-num">01</div>
+              <strong>Validate</strong>
+              <span>AI checks auth, endpoints, confidence</span>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-card">
+              <div class="flow-num">02</div>
+              <strong>Generate</strong>
+              <span>5 typed files + registry patch</span>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-card">
+              <div class="flow-num">03</div>
+              <strong>Test &amp; Review</strong>
+              <span>Playwright + AI code review</span>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-card">
+              <div class="flow-num">04</div>
+              <strong>PR + Notify</strong>
+              <span>GitHub PR &amp; team notification</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pipeline screen -->
+      <div class="pipe-screen hidden" id="pipe-screen">
+
+        <div class="step-card" id="step-card">
+          <div class="step-card-left">
+            <div class="step-eye" id="step-eye">Step 1 of 9</div>
+            <h2 class="step-h2" id="step-h2">Document Validation</h2>
+            <p class="step-p" id="step-p">Checking if this document is valid API documentation.</p>
+          </div>
+          <span class="step-pill" id="step-pill">Awaiting Approval</span>
+        </div>
+
+        <div class="out-card" id="out-card">
+          <div class="out-placeholder">Step output will appear here.</div>
+        </div>
+
+        <div class="raw-card">
+          <div class="raw-head">
+            <span class="raw-title">Raw Log</span>
+            <button class="raw-copy" type="button" id="raw-copy">copy</button>
+          </div>
+          <pre class="raw-log" id="raw-log">Waiting for generator events.</pre>
+        </div>
+
+        <div class="recovery-card hidden" id="recovery-card">
+          <div>
+            <strong>Document rejected</strong>
+            <p id="recovery-reason">The uploaded document could not be validated as API documentation.</p>
+          </div>
+          <div class="recovery-actions">
+            <button class="btn-sec" type="button" id="btn-reupload">Upload another document</button>
+            <button class="btn-pri" type="button" id="btn-reshare">Share another URL</button>
+          </div>
+        </div>
+
+        <div class="hitl-card">
+          <div class="hitl-head">
+            <span class="hitl-title">Instructions</span>
+            <span class="hitl-badge" id="hitl-badge">Interactive</span>
+          </div>
+          <div class="chat" id="chat"></div>
+          <form class="hitl-foot" id="hitl-form">
+            <textarea id="instr-input" rows="2" placeholder="Type instructions, ask a question, or press Approve…"></textarea>
+            <div class="hitl-btns">
+              <button class="btn-sec" type="button" id="btn-skip">Skip</button>
+              <button class="btn-sec" type="button" id="btn-retry">Retry</button>
+              <button class="btn-pri" type="submit">Approve →</button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+  <script type="module" src="./generator.js"></script>
+</body>
+</html>

@@ -38,3 +38,6 @@ playwright-report/
 # Tool/IDE artifacts
 .codex
 .serena/
+
+# Connector generator pipeline state (machine-local, resume files)
+.connector-gen/

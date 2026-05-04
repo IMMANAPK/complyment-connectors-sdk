@@ -31,7 +31,13 @@
     "test:e2e:debug": "npm run build && playwright test --debug",
     "test:connectors": "npm run build && playwright test tests/e2e/connectors/connectors.spec.ts",
     "test:connector": "npm run build && playwright test tests/e2e/connectors/connectors.spec.ts --grep",
-    "test:full": "npm run build && playwright test tests/e2e/connectors --grep"
+    "test:full": "npm run build && playwright test tests/e2e/connectors --grep",
+    "generate": "node interfaces/cli/generate-connector.cjs",
+    "generate:auto": "node interfaces/cli/generate-connector.cjs --auto",
+    "generate:dry": "node interfaces/cli/generate-connector.cjs --auto --dry-run",
+    "generate:ui": "node interfaces/ui/generator-server.cjs",
+    "generate:dev": "node interfaces/ui/generator-server.cjs --dev",
+    "generate:mcp": "node src/ai/mcp/ConnectorGeneratorServer.cjs"
   },
   "keywords": [
     "connectors",
@@ -54,7 +60,16 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@octokit/rest": "^22.0.1",
     "axios": "^1.13.5",
+    "js-yaml": "^4.1.1",
+    "multer": "^2.1.1",
+    "node-html-parser": "^7.1.0",
+    "nodemailer": "^8.0.7",
+    "pdf-parse": "^2.4.5",
+    "simple-git": "^3.36.0",
+    "three": "^0.184.0",
+    "ws": "^8.20.0",
     "zod": "^4.3.6"
   }
 }
