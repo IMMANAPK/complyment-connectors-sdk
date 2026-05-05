@@ -114,6 +114,7 @@ app.post('/api/generate', upload.single('document'), async (req, res) => {
     'run-tests': req.body.runTests === true || req.body.runTests === 'true',
     'apply-git': req.body.applyGit === true || req.body.applyGit === 'true',
     'create-pr': req.body.createPr === true || req.body.createPr === 'true',
+    notify: req.body.notify === true || req.body.notify === 'true',
   })
 
   // Run preflight checks; block if git ops are requested without credentials
@@ -186,8 +187,10 @@ function startServer(port) {
 
   server.on('error', err => {
     if (err.code === 'EADDRINUSE') {
-      console.log(`Port ${port} is already in use. Trying port ${port + 1}...`)
-      startServer(port + 1)
+      console.error(`\nPort ${port} is already in use.`)
+      console.error(`Run this to free it:  kill $(lsof -ti :${port})`)
+      console.error(`Then re-run:          npm run generate:ui\n`)
+      process.exit(1)
     } else {
       console.error(`Server error: ${err.message}`)
       process.exit(1)

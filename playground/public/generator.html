@@ -25,7 +25,7 @@
     <div class="topbar-right">
       <div class="ai-badge" id="ai-badge">
         <span class="ai-dot"></span>
-        <span id="ai-name">Claude</span>
+        <span id="ai-name">AI</span>
       </div>
       <div class="seg-ctrl">
         <button class="seg-btn active" id="mode-interactive">Interactive</button>
@@ -162,6 +162,11 @@
               <span class="got-label">Create GitHub PR</span>
             </label>
             <label class="gen-opt-toggle">
+              <input type="checkbox" id="opt-notify" />
+              <span class="got-track"><span class="got-thumb"></span></span>
+              <span class="got-label">Send Notification</span>
+            </label>
+            <label class="gen-opt-toggle">
               <input type="checkbox" id="opt-run-tests" />
               <span class="got-track"><span class="got-thumb"></span></span>
               <span class="got-label">Run Playwright Tests</span>
@@ -247,6 +252,7 @@
           <form class="hitl-foot" id="hitl-form">
             <textarea id="instr-input" rows="2" placeholder="Type instructions, ask a question, or press Approve…"></textarea>
             <div class="hitl-btns">
+              <button class="btn-danger" type="button" id="btn-abort">Abort</button>
               <button class="btn-sec" type="button" id="btn-skip">Skip</button>
               <button class="btn-sec" type="button" id="btn-retry">Retry</button>
               <button class="btn-pri" type="submit">Approve →</button>

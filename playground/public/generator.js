@@ -767,6 +767,7 @@ async function start(profileName, file = null, url = '') {
     form.append('interactive', S.interactive ? 'true' : 'false')
     if (document.getElementById('opt-apply-git')?.checked) form.append('applyGit', 'true')
     if (document.getElementById('opt-create-pr')?.checked) form.append('createPr', 'true')
+    if (document.getElementById('opt-notify')?.checked) form.append('notify', 'true')
     const runTests = document.getElementById('opt-run-tests')?.checked
     if (runTests) form.append('runTests', 'true')
     if (Object.keys(S.stepConfigOverrides).length) {
@@ -820,7 +821,10 @@ async function approve(instruction = '') {
 }
 
 function reset() {
-  S.step = 0; S.approved = -1; S.started = false; S.msgs = []; S.rawLogs = []; S.liveRun = false; S.sourceKind = 'demo'; S.stepOutputs = {}
+  S.eventSource?.close()
+  S.step = 0; S.approved = -1; S.started = false; S.msgs = []; S.rawLogs = []
+  S.liveRun = false; S.sourceKind = 'demo'; S.stepOutputs = {}
+  S.awaitingHITL = false; S.skippedSteps = new Set(); S.runId = null
   hideRecovery()
   document.getElementById('upload-screen').classList.remove('hidden')
   document.getElementById('pipe-screen').classList.add('hidden')
@@ -855,6 +859,19 @@ document.getElementById('btn-retry').addEventListener('click', async () => {
     render()
   }
 })
+document.getElementById('btn-abort').addEventListener('click', async () => {
+  if (!confirm('Abort the pipeline? This will stop all remaining steps.')) return
+  S.msgs.push({ role: 'user', text: 'Aborted pipeline.' })
+  if (await hasLiveBackend() && S.runId) {
+    await fetch(`/api/hitl/${S.runId}`, { method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ intent: 'ABORT', instruction: '' }) })
+    renderChat()
+  } else {
+    showRecovery('Pipeline aborted by user.')
+    render()
+  }
+})
 document.getElementById('mode-interactive').addEventListener('click', () => {
   S.interactive = true
   S.msgs.push({ role: 'ai', text: 'Switched to interactive mode.' }); render()
@@ -884,7 +901,9 @@ document.getElementById('raw-copy').addEventListener('click', async () => {
 })
 document.getElementById('btn-reupload').addEventListener('click', () => {
   reset()
-  document.getElementById('doc-upload').click()
+  const input = document.getElementById('doc-upload')
+  input.value = ''
+  input.click()
 })
 document.getElementById('btn-reshare').addEventListener('click', () => {
   reset()
@@ -1062,3 +1081,8 @@ const dz = document.getElementById('dropzone')
 // ── Init ──────────────────────────────────────────────────────
 render()
 try { mini = initBgScene() } catch (e) { console.warn('3D bg scene skipped:', e) }
+
+// Set real provider name from backend on load
+fetch('/api/info').then(r => r.json()).then(({ provider }) => {
+  if (provider) document.getElementById('ai-name').textContent = provider
+}).catch(() => {})
