@@ -50,11 +50,38 @@ async function extractUrl(url) {
 }
 
 async function extractPdf(buffer) {
-  const pdfParse = require('pdf-parse')
-  const data = await pdfParse(buffer)
-  const text = String(data.text || '').trim()
+  // Try pdftotext first (most reliable for Notion/browser-printed PDFs)
+  const text = await extractPdfViaCli(buffer) || await extractPdfViaLib(buffer)
   if (!text) throw new Error('PDF text extraction returned no readable text')
   return text
+}
+
+async function extractPdfViaCli(buffer) {
+  const { execSync, spawnSync } = require('child_process')
+  const fs = require('fs')
+  const os = require('os')
+  // Check if pdftotext is available
+  const which = spawnSync('which', ['pdftotext'], { encoding: 'utf8' })
+  if (which.status !== 0) return null
+  const tmp = require('path').join(os.tmpdir(), `pdf-${Date.now()}.pdf`)
+  try {
+    fs.writeFileSync(tmp, buffer)
+    const result = execSync(`pdftotext "${tmp}" -`, { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 })
+    return result.trim() || null
+  } catch {
+    return null
+  } finally {
+    try { fs.unlinkSync(tmp) } catch {}
+  }
+}
+
+async function extractPdfViaLib(buffer) {
+  const mod = require('pdf-parse')
+  if (typeof mod === 'function') {
+    const data = await mod(buffer)
+    return String(data.text || '').trim() || null
+  }
+  return null
 }
 
 function extractJson(text) {
