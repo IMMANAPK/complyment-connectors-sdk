@@ -111,16 +111,37 @@ async function run(opts = {}) {
       return typecheckWithFix(genResult, rootDir, config.maxTypecheckRetries)
     }, result => result.summary || `${result.passed ? 'Passed' : 'Failed'} after ${result.attempts} attempt(s)`, state, rootDir, config, stepConfig, opts, emit)
 
+    // Use typecheck-fixed files for all downstream steps (if fix loop updated them)
+    let activeGenResult = typeResult?.result?.files ? { ...genResult, files: typeResult.result.files } : genResult
+
     const testResult = await step(5, 'tests', async () => {
       if (!config.runTests) return { passed: true, skipped: true, summary: 'Disabled by config' }
       log('Running Playwright connector tests…')
-      return runTestsWithFix(state.connectorId, genResult, rootDir, config.maxTestRetries)
+      return runTestsWithFix(state.connectorId, activeGenResult, rootDir, config.maxTestRetries)
     }, result => result.summary || `${result.passed ? 'Passed' : 'Failed'} after ${result.attempts} attempt(s)`, state, rootDir, config, stepConfig, opts, emit)
 
-    const reviewResult = await step(6, 'review', async () => {
+    // Absorb any connector fixes the test loop applied
+    if (testResult?.connectorFiles) activeGenResult = { ...activeGenResult, files: { ...activeGenResult.files, ...testResult.connectorFiles } }
+
+    let reviewResult = await step(6, 'review', async () => {
       log('Reviewing generated code…')
-      return reviewCode(genResult, instructionsFor(state, 'review'))
+      return reviewCode(activeGenResult, instructionsFor(state, 'review'))
     }, result => `Score: ${result.score}/100 — ${result.verdict}`, state, rootDir, config, stepConfig, opts, emit)
+
+    // If review rejected, re-run codegen with review issues as context then re-review once
+    if (reviewResult.verdict === 'REJECTED' && !config.dryRun) {
+      log('Review REJECTED — re-generating with review feedback…')
+      const reviewNotes = (reviewResult.issues || []).map(i => `[${i.severity}] ${i.file}: ${i.message}`).join('\n')
+      const regenResult = await step(3, 'codegen', async () => {
+        const generated = await generateConnector(analysis, docText, modeInfo.mode,
+          `Previous review REJECTED. Fix these issues:\n${reviewNotes}\n${instructionsFor(state, 'codegen')}`)
+        const writeResult = writeFiles(generated, rootDir, { dryRun: config.dryRun })
+        return { ...generated, writeResult, dryRun: config.dryRun }
+      }, result => `Re-generated ${result.writeResult.files.length} files after review rejection`, state, rootDir, config, stepConfig, opts, emit)
+      activeGenResult = regenResult
+      reviewResult = await reviewCode(activeGenResult, instructionsFor(state, 'review'))
+      emit(EVENTS.STEP_DONE, { step: 'review', stepIndex: 6, output: reviewResult, retry: true })
+    }
 
     const prResult = await step(7, 'pr', async () => {
       log('Preparing commit and pull request…')

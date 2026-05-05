@@ -41,3 +41,9 @@ playwright-report/
 
 # Connector generator pipeline state (machine-local, resume files)
 .connector-gen/
+
+# Generated connectors (codegen output — not hand-authored SDK code)
+src/connectors/*/
+
+# Test API documents used for local pipeline testing
+test-api-*.json
