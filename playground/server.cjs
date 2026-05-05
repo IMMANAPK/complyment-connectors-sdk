@@ -4,6 +4,7 @@ const path = require('path')
 
 const app = express()
 app.use(express.json({ limit: '10mb' }))
+app.use('/vendor/three', express.static(path.join(__dirname, '..', 'node_modules', 'three', 'build')))
 app.use(express.static(path.join(__dirname, 'public')))
 
 let sdk

@@ -136,6 +136,8 @@ export {
     createSentinelOneMCPTools,
 } from './ai/mcp/MCPServer'
 export type { MCPTool, MCPToolResult } from './ai/mcp/MCPServer'
+export { ConnectorGeneratorServer, connectorGeneratorServer } from './ai/mcp/ConnectorGeneratorServer'
+export type { ConnectorGeneratorToolResult } from './ai/mcp/ConnectorGeneratorServer'
 
 // ============================================
 // AI - LangChain
