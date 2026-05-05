@@ -224,4 +224,31 @@ module.exports = {
     },
   },
 
+
+  'acme-risk': {
+    sdkClass: "AcmeRiskConnector",
+    label: "Acme Risk",
+    desc: "Generated connector",
+    color: "#00cfb0",
+    fields: [
+      {
+        key: "baseUrl",
+        label: "Base URL",
+        type: "text",
+        required: true
+      },
+      {
+        key: "apiKey",
+        label: "API Key",
+        type: "password",
+        required: true
+      }
+    ],
+    opsConfig: {
+      getAssets: {
+        desc: "Get Assets",
+        params: {}
+      }
+    }
+  },
 }
