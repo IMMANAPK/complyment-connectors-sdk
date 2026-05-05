@@ -170,10 +170,10 @@ function initBgScene() {
   }
 
   // ── Animate ─────────────────────────────────────────────
-  const clock = new THREE.Clock()
+  let startTime = performance.now()
   let rafId = null
   function tick() {
-    const t = clock.getElapsedTime()
+    const t = (performance.now() - startTime) / 1000
     const pos = ptGeo.attributes.position.array
 
     // Drift orbs in slow Lissajous paths
@@ -218,7 +218,7 @@ function initBgScene() {
   function start() {
     if (rafId !== null) return
     canvas.style.display = ''
-    clock.start()
+    startTime = performance.now()
     rafId = requestAnimationFrame(tick)
   }
 
@@ -651,6 +651,7 @@ function handleServerEvent(data) {
   }
   if (event === 'step:start') {
     S.step = stepIndex
+    S.awaitingHITL = false   // clear stale approval badge when next step begins
     S.msgs.push({ role: 'ai', text: `Running: ${STEPS[stepIndex]?.title}…` })
     render(); mini?.updateStep(S.step, S.approved); return
   }
@@ -689,7 +690,18 @@ function handleServerEvent(data) {
   }
   if (event === 'hitl:prompt') {
     S.awaitingHITL = true
-    S.msgs.push({ role: 'ai', text: `Awaiting your approval for: ${STEPS[S.step]?.title}` })
+    // Store step output so the detail panel renders immediately (not after approval)
+    if (output && typeof output === 'object') {
+      S.stepOutputs = S.stepOutputs || {}
+      S.stepOutputs[step] = output
+    }
+    // Snap S.step back to the step awaiting approval so its output renders in the panel.
+    // step:done advances S.step to next, but HITL fires for the completed step.
+    const serverToUi = { conflict: 'analyze', pr: 'mr' }
+    const uiStepId = serverToUi[step] || step
+    const hitlIdx = STEPS.findIndex(s => s.id === uiStepId)
+    if (hitlIdx !== -1) S.step = hitlIdx
+    S.msgs.push({ role: 'ai', text: `Awaiting your approval for: ${STEPS[hitlIdx !== -1 ? hitlIdx : S.step]?.title}` })
     render(); return
   }
   if (event === 'done') {
@@ -753,6 +765,8 @@ async function start(profileName, file = null, url = '') {
       form.append('demo', profileName)
     }
     form.append('interactive', S.interactive ? 'true' : 'false')
+    if (document.getElementById('opt-apply-git')?.checked) form.append('applyGit', 'true')
+    if (document.getElementById('opt-create-pr')?.checked) form.append('createPr', 'true')
     const runTests = document.getElementById('opt-run-tests')?.checked
     if (runTests) form.append('runTests', 'true')
     if (Object.keys(S.stepConfigOverrides).length) {
@@ -1010,6 +1024,21 @@ applyTheme(currentTheme)
 document.querySelectorAll('[data-demo]').forEach(b =>
   b.addEventListener('click', () => start(b.dataset.demo))
 )
+
+// "Create PR" only makes sense when files are actually written
+document.getElementById('opt-apply-git')?.addEventListener('change', e => {
+  const createPrEl = document.getElementById('opt-create-pr')
+  if (createPrEl) {
+    createPrEl.disabled = !e.target.checked
+    createPrEl.closest('label').style.opacity = e.target.checked ? '' : '0.4'
+    if (!e.target.checked) createPrEl.checked = false
+  }
+})
+// Disable Create PR on page load since Write files starts unchecked
+;(() => {
+  const el = document.getElementById('opt-create-pr')
+  if (el) { el.disabled = true; el.closest('label').style.opacity = '0.4' }
+})()
 
 const upload = document.getElementById('doc-upload')
 upload.addEventListener('change', () => {

@@ -203,7 +203,7 @@ async function humanGate(id, label, summary, output, state, config, stepConfig, 
   }
 
   if (opts.waitForHuman) {
-    emit(EVENTS.HITL_PROMPT, { step: id, message: summary })
+    emit(EVENTS.HITL_PROMPT, { step: id, message: summary, output })
     return opts.waitForHuman({ runId: state.runId, step: id, label, summary, config: cfg })
   }
   return gate(label, summary, { interactive: true, stepConfig: cfg, onTimeout: config.onTimeout })

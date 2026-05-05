@@ -53,9 +53,14 @@ async function manageBranch(connectorId, cwd = process.cwd(), options = {}) {
     return { exists: true, hadConflicts: conflictedFiles.length > 0, action: 'pulled', branch, currentBranch, conflictResolutions }
   }
 
-  // Create from main
-  try { run('git checkout main', cwd) } catch { run('git checkout master', cwd) }
-  try { run('git pull origin main', cwd) } catch { /* offline ok */ }
+  // Create from the repo's default branch; if checkout fails (dirty tree) branch from current HEAD
+  const defaultBranch = getDefaultBranch(cwd)
+  try {
+    run(`git checkout ${defaultBranch}`, cwd)
+    try { run(`git pull origin ${defaultBranch}`, cwd) } catch { /* offline / no remote ok */ }
+  } catch {
+    // Dirty working tree or default branch unreachable — branch from current HEAD
+  }
   run(`git checkout -b ${branch}`, cwd)
   return { exists: false, hadConflicts: hasConflicts(cwd), action: 'created', branch, currentBranch }
 }
@@ -96,6 +101,17 @@ function getConflictedFiles(cwd) {
 
 function getCurrentBranch(cwd) {
   try { return run('git branch --show-current', cwd) } catch { return null }
+}
+
+function getDefaultBranch(cwd) {
+  try {
+    const remote = run('git remote show origin', cwd)
+    const match = remote.match(/HEAD branch:\s*(.+)/)
+    if (match) return match[1].trim()
+  } catch { /* no remote */ }
+  try { run('git rev-parse --verify main', cwd); return 'main' } catch {}
+  try { run('git rev-parse --verify master', cwd); return 'master' } catch {}
+  return 'main'
 }
 
 module.exports = { manageBranch, commitFiles, pushBranch, hasConflicts, getConflictedFiles }

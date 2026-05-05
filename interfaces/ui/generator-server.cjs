@@ -18,6 +18,7 @@ const app = express()
 app.use(express.json())
 app.use('/vendor/three', express.static(path.join(ROOT, 'node_modules', 'three', 'build')))
 app.get('/', (_, res) => res.redirect('/generator.html'))
+app.get('/favicon.ico', (_, res) => res.status(204).end())
 app.use(express.static(path.join(ROOT, 'playground', 'public')))
 
 // File upload handling
@@ -111,6 +112,8 @@ app.post('/api/generate', upload.single('document'), async (req, res) => {
   const config = loadConfig(ROOT, {
     mode: interactive === false || interactive === 'false' ? 'auto' : 'interactive',
     'run-tests': req.body.runTests === true || req.body.runTests === 'true',
+    'apply-git': req.body.applyGit === true || req.body.applyGit === 'true',
+    'create-pr': req.body.createPr === true || req.body.createPr === 'true',
   })
 
   // Run preflight checks; block if git ops are requested without credentials
@@ -175,24 +178,27 @@ app.get('/api/info', (req, res) => {
   res.json({ provider: getProviderName(), version: '0.3.5' })
 })
 
-const server = app.listen(PORT, () => {
-  console.log(`Generator UI server running at http://localhost:${PORT}`)
-  console.log(`AI provider: ${getProviderName()}`)
-})
+function startServer(port) {
+  const server = app.listen(port, () => {
+    console.log(`Generator UI server running at http://localhost:${port}`)
+    console.log(`AI provider: ${getProviderName()}`)
+  })
 
-server.on('error', err => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`\nError: Port ${PORT} is already in use.`)
-    console.error(`Run this to free it:  kill $(lsof -ti :${PORT})`)
-    console.error(`Or set a different port:  GENERATOR_PORT=4002 npm run generate:ui\n`)
-  } else {
-    console.error(`Server error: ${err.message}`)
-  }
-  process.exit(1)
-})
+  server.on('error', err => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${port} is already in use. Trying port ${port + 1}...`)
+      startServer(port + 1)
+    } else {
+      console.error(`Server error: ${err.message}`)
+      process.exit(1)
+    }
+  })
+}
+
+startServer(PORT)
 
 function waitForHITL(runId, step, summary) {
-  broadcast(runId, EVENTS.HITL_PROMPT, { step, message: summary })
+  // The orchestrator already emits hitl:prompt (with output) via onEvent — no second broadcast needed
   return new Promise(resolve => {
     hitlResolvers.set(runId, resolve)
   })
