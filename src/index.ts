@@ -201,3 +201,6 @@ export type { WorkflowResult } from './ai/workflows/AgentWorkflow'
 
 export const SDK_VERSION = '0.3.5'
 export const SDK_NAME = '@skill-mine/complyment-connectors-sdk'
+
+export { SentinelOneSingularityConnector } from './connectors/sentinelone-singularity/SentinelOneSingularityConnector'
+export * from './connectors/sentinelone-singularity/types'

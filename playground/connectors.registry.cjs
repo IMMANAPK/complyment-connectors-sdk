@@ -224,4 +224,59 @@ module.exports = {
     },
   },
 
+
+  'sentinelone-singularity': {
+    sdkClass: "SentinelOneSingularityConnector",
+    label: "SentinelOne Singularity",
+    desc: "Generated connector",
+    color: "#00cfb0",
+    fields: [
+      {
+        key: "baseUrl",
+        label: "Base URL",
+        type: "text",
+        required: true
+      },
+      {
+        key: "token",
+        label: "Bearer Token",
+        type: "password",
+        required: true
+      }
+    ],
+    opsConfig: {
+      getThreats: {
+        desc: "Get Threats",
+        params: {}
+      },
+      mitigateThreat: {
+        desc: "Mitigate Threat",
+        params: {}
+      },
+      getAgents: {
+        desc: "Get Agents",
+        params: {}
+      },
+      isolateAgent: {
+        desc: "Isolate Agent",
+        params: {}
+      },
+      getSites: {
+        desc: "Get Sites",
+        params: {}
+      },
+      getActivities: {
+        desc: "Get Activities",
+        params: {}
+      },
+      getGroups: {
+        desc: "Get Groups",
+        params: {}
+      },
+      getAlerts: {
+        desc: "Get Alerts",
+        params: {}
+      }
+    }
+  },
 }
