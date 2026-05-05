@@ -224,4 +224,67 @@ module.exports = {
     },
   },
 
+
+  'tenable-vulnerability-management': {
+    sdkClass: "TenableVulnerabilityManagementConnector",
+    label: "Tenable Vulnerability Management",
+    desc: "Generated connector",
+    color: "#00cfb0",
+    fields: [
+      {
+        key: "baseUrl",
+        label: "Base URL",
+        type: "text",
+        required: true
+      },
+      {
+        key: "apiKey",
+        label: "API Key",
+        type: "password",
+        required: true
+      }
+    ],
+    opsConfig: {
+      listScans: {
+        desc: "List Scans",
+        params: {}
+      },
+      createScan: {
+        desc: "Create Scan",
+        params: {}
+      },
+      getScan: {
+        desc: "Get Scan",
+        params: {}
+      },
+      deleteScan: {
+        desc: "Delete Scan",
+        params: {}
+      },
+      launchScan: {
+        desc: "Launch Scan",
+        params: {}
+      },
+      listAssets: {
+        desc: "List Assets",
+        params: {}
+      },
+      getAsset: {
+        desc: "Get Asset",
+        params: {}
+      },
+      listVulnerabilities: {
+        desc: "List Vulnerabilities",
+        params: {}
+      },
+      getAssetVulnerabilities: {
+        desc: "Get Asset Vulnerabilities",
+        params: {}
+      },
+      listTags: {
+        desc: "List Tags",
+        params: {}
+      }
+    }
+  },
 }
