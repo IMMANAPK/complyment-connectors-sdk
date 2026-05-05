@@ -224,4 +224,59 @@ module.exports = {
     },
   },
 
+
+  'crowdstrike-falcon': {
+    sdkClass: "CrowdStrikeFalconConnector",
+    label: "CrowdStrike Falcon",
+    desc: "Generated connector",
+    color: "#00cfb0",
+    fields: [
+      {
+        key: "baseUrl",
+        label: "Base URL",
+        type: "text",
+        required: true
+      },
+      {
+        key: "token",
+        label: "Bearer Token",
+        type: "password",
+        required: true
+      }
+    ],
+    opsConfig: {
+      getDetections: {
+        desc: "Get Detections",
+        params: {}
+      },
+      getDetectionDetails: {
+        desc: "Get Detection Details",
+        params: {}
+      },
+      getIncidents: {
+        desc: "Get Incidents",
+        params: {}
+      },
+      getDevices: {
+        desc: "Get Devices",
+        params: {}
+      },
+      getDeviceDetails: {
+        desc: "Get Device Details",
+        params: {}
+      },
+      getAlerts: {
+        desc: "Get Alerts",
+        params: {}
+      },
+      getVulnerabilities: {
+        desc: "Get Vulnerabilities",
+        params: {}
+      },
+      isolateDevice: {
+        desc: "Isolate Device",
+        params: {}
+      }
+    }
+  },
 }
