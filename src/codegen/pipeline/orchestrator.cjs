@@ -138,7 +138,14 @@ async function run(opts = {}) {
         const writeResult = writeFiles(generated, rootDir, { dryRun: config.dryRun })
         return { ...generated, writeResult, dryRun: config.dryRun }
       }, result => `Re-generated ${result.writeResult.files.length} files after review rejection`, state, rootDir, config, stepConfig, opts, emit)
-      activeGenResult = regenResult
+      // Re-typecheck the regenerated code before re-reviewing
+      if (config.runTypecheck) {
+        const reTypeResult = await typecheckWithFix(regenResult, rootDir, config.maxTypecheckRetries)
+        if (reTypeResult?.result?.files) activeGenResult = { ...regenResult, files: reTypeResult.result.files }
+        else activeGenResult = regenResult
+      } else {
+        activeGenResult = regenResult
+      }
       reviewResult = await reviewCode(activeGenResult, instructionsFor(state, 'review'))
       emit(EVENTS.STEP_DONE, { step: 'review', stepIndex: 6, output: reviewResult, retry: true })
     }

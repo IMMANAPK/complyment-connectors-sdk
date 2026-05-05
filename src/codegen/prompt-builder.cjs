@@ -1,7 +1,9 @@
 'use strict'
 
 function analysisPrompt(docText, humanInstruction = '') {
-  return `Analyze this document and determine if it is valid API documentation.
+  return `Analyze this document and extract API information from it. Accept any document that mentions HTTP methods, endpoints, authentication, or operations — including integration guides, Notion pages, and informal API docs.
+Only set verdict to "FAIL" or "REJECT" if the document has absolutely no API-related content.
+If base URL is not explicitly stated, set it to empty string.
 ${humanInstruction ? `Additional instruction from human reviewer: "${humanInstruction}"\n` : ''}
 Document (first 12000 chars):
 ${docText.slice(0, 12000)}

@@ -34,6 +34,10 @@ ${(reviewResult?.issues || []).filter(i => i.severity !== 'info').map(i => `- âš
 
   if (dryRun || !createPr) return { url: null, title, branch, draftBody: body, dryRun: true }
 
+  // Force draft if tests ran and failed â€” PR needs human review before merge
+  const testsFailed = testResult && !testResult.skipped && !testResult.passed
+  const isDraft = testsFailed || process.env.GITHUB_PR_DRAFT === 'true'
+
   if (process.env.GITHUB_TOKEN) {
     try {
       const repo = getRepo(cwd)
@@ -42,26 +46,27 @@ ${(reviewResult?.issues || []).filter(i => i.severity !== 'info').map(i => `- âš
       const pr = await octokit.pulls.create({
         owner: repo.owner,
         repo: repo.repo,
-        title,
+        title: isDraft ? `[DRAFT] ${title}` : title,
         body,
         base: process.env.GITHUB_BASE_BRANCH || 'main',
         head: branch,
-        draft: process.env.GITHUB_PR_DRAFT !== 'false',
+        draft: isDraft,
       })
-      return { url: pr.data.html_url, title, branch, number: pr.data.number }
+      return { url: pr.data.html_url, title, branch, number: pr.data.number, draft: isDraft }
     } catch (err) {
       if (process.env.GENERATOR_STRICT_GITHUB === 'true') throw err
     }
   }
 
   try {
+    const draftFlag = isDraft ? '--draft' : ''
+    const prTitle = isDraft ? `[DRAFT] ${title}` : title
     const url = run(
-      `gh pr create --title "${title.replace(/"/g, '\\"')}" --body "${body.replace(/"/g, '\\"').replace(/\n/g, '\\n')}" --base main --head ${branch}`,
+      `gh pr create --title "${prTitle.replace(/"/g, '\\"')}" --body "${body.replace(/"/g, '\\"').replace(/\n/g, '\\n')}" --base main --head ${branch} ${draftFlag}`.trim(),
       cwd
     )
-    return { url, title, branch }
+    return { url, title: prTitle, branch, draft: isDraft }
   } catch (err) {
-    // gh not installed or no GitHub remote â€” return draft info
     return { url: null, title, branch, draftBody: body, error: err.message }
   }
 }
