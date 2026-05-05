@@ -224,4 +224,51 @@ module.exports = {
     },
   },
 
+
+  'wiz-cloud-security': {
+    sdkClass: "WizCloudSecurityConnector",
+    label: "Wiz Cloud Security",
+    desc: "Generated connector",
+    color: "#00cfb0",
+    fields: [
+      {
+        key: "baseUrl",
+        label: "Base URL",
+        type: "text",
+        required: true
+      },
+      {
+        key: "token",
+        label: "Bearer Token",
+        type: "password",
+        required: true
+      }
+    ],
+    opsConfig: {
+      listIssues: {
+        desc: "List Issues",
+        params: {}
+      },
+      listVulnerabilities: {
+        desc: "List Vulnerabilities",
+        params: {}
+      },
+      listResources: {
+        desc: "List Resources",
+        params: {}
+      },
+      getResource: {
+        desc: "Get Resource",
+        params: {}
+      },
+      listReports: {
+        desc: "List Reports",
+        params: {}
+      },
+      listControls: {
+        desc: "List Controls",
+        params: {}
+      }
+    }
+  },
 }
