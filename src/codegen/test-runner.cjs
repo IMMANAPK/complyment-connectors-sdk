@@ -30,9 +30,9 @@ async function runTestsWithFix(connectorId, generatorResult, rootDir = process.c
   let attempt = 0
   while (attempt <= maxRetries) {
     const result = runTests(connectorId, rootDir)
-    if (result.passed) return { passed: true, attempts: attempt, summary: result.summary }
+    if (result.passed) return { passed: true, attempts: attempt, summary: result.summary, connectorFiles: generatorResult.files }
 
-    if (attempt === maxRetries) return { passed: false, attempts: attempt, summary: result.summary, error: result.output }
+    if (attempt === maxRetries) return { passed: false, attempts: attempt, summary: result.summary, error: result.output, connectorFiles: generatorResult.files }
 
     let fix
     try {
@@ -45,15 +45,24 @@ async function runTestsWithFix(connectorId, generatorResult, rootDir = process.c
 
     try {
       const parsed = parseJson(fix)
+      const fs = require('fs'), path = require('path')
       if (parsed.testFix) {
-        const fs = require('fs'), path = require('path')
         const testPath = path.join(rootDir, 'tests', `${connectorId}.spec.ts`)
         if (fs.existsSync(testPath)) fs.writeFileSync(testPath, parsed.testFix)
+      }
+      if (parsed.connectorFix && generatorResult.className) {
+        const connPath = path.join(rootDir, 'src', 'connectors', connectorId, `${generatorResult.className}.ts`)
+        if (fs.existsSync(connPath)) {
+          fs.writeFileSync(connPath, parsed.connectorFix)
+          // carry the fix forward so orchestrator can update activeGenResult
+          generatorResult = { ...generatorResult, files: { ...generatorResult.files, [`${generatorResult.className}.ts`]: parsed.connectorFix } }
+        }
       }
     } catch { /* continue */ }
 
     attempt++
   }
+  return { passed: false, attempts: attempt - 1, summary: 'Max retries exceeded', skippedFix: true }
 }
 
 function parseJson(raw) {

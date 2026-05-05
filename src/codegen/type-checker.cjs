@@ -4,6 +4,13 @@ const { getProvider } = require('./providers/factory.cjs')
 const { writeFiles } = require('./code-generator.cjs')
 
 const FIX_SYSTEM = `You are a TypeScript expert fixing type errors in a connector SDK.
+BaseConnector protected method signatures (exact):
+  get<T>(url: string, params?: Record<string, unknown>): Promise<ConnectorResponse<T>>
+  post<T>(url: string, body?: unknown): Promise<ConnectorResponse<T>>
+  put<T>(url: string, body?: unknown): Promise<ConnectorResponse<T>>
+  patch<T>(url: string, body?: unknown): Promise<ConnectorResponse<T>>
+  delete<T>(url: string): Promise<ConnectorResponse<T>>   // NO body or params — URL only
+Common fix: replace this.delete(url, params) with this.post(url, params) for action endpoints.
 Respond with ONLY valid JSON — same shape as the files object you receive, with fixes applied.`
 
 // Runs tsc --noEmit and returns { passed, errors }

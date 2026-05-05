@@ -38,12 +38,18 @@ function heuristicFiles({ analysis, className, connectorId, operations }) {
   const methods = operations.map(op => {
     const httpMethod = inferHttpMethod(op)
     const hasBody = ['post', 'put', 'patch'].includes(httpMethod)
+    const isDelete = httpMethod === 'delete'
+    // delete(url) takes only URL; post(url, body?) takes body as 2nd arg; get(url, params?) takes params as 2nd arg
     const paramSig = hasBody
-      ? `body?: Record<string, unknown>, params?: Record<string, unknown>`
-      : `params?: Record<string, unknown>`
+      ? `body?: Record<string, unknown>`
+      : isDelete
+        ? ``
+        : `params?: Record<string, unknown>`
     const callArgs = hasBody
-      ? `API_PATHS.${constantName(op)}, body, params`
-      : `API_PATHS.${constantName(op)}, params`
+      ? `API_PATHS.${constantName(op)}, body`
+      : isDelete
+        ? `API_PATHS.${constantName(op)}`
+        : `API_PATHS.${constantName(op)}, params`
     return `  async ${op}(${paramSig}): Promise<ConnectorResponse<unknown>> {
     const response = await this.${httpMethod}<unknown>(${callArgs})
     return parseConnectorResponse(response)
@@ -154,7 +160,8 @@ function inferHttpMethod(op) {
   if (/^(create|add|post|submit|send|upload|register|invite|trigger|launch|start)/.test(name)) return 'post'
   if (/^(update|edit|set|put|replace|modify)/.test(name)) return 'put'
   if (/^(patch|merge|partial)/.test(name)) return 'patch'
-  if (/^(delete|remove|destroy|purge|revoke|deactivate|disable|cancel|stop|kill|isolate|block)/.test(name)) return 'delete'
+  if (/^(delete|remove|destroy|purge|revoke|deactivate|disable|cancel)/.test(name)) return 'delete'
+  if (/^(stop|kill|isolate|block|disconnect|reconnect|connect|notify|trigger|send|run|execute|scan|mitigate|remediate|quarantine|rollback)/.test(name)) return 'post'
   return 'get'
 }
 
