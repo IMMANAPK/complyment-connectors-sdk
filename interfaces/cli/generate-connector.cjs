@@ -31,6 +31,8 @@ Options:
   --create-pr                  Actually call gh pr create (requires --apply-git)
   --notify                     Actually send configured SMTP email notifications
   --run-tests                  Run Playwright connector tests
+  --multi-agent                Run the supervisor/child-agent orchestrator
+  --legacy-orchestrator        Force the original linear orchestrator
   --root <dir>                 SDK root directory
 `)
   process.exit(0)
@@ -73,7 +75,8 @@ console.log(`Provider : ${getProviderName()}`)
 console.log(`Input    : ${resume ? `resume ${resume}` : docUrl || docPath || 'inline text'}`)
 console.log(`Mode     : ${flags.mode || 'auto-detect'}`)
 console.log(`HITL     : ${config.mode === 'auto' ? 'auto' : 'interactive'}`)
-console.log(`Dry run  : ${config.dryRun ? 'yes' : 'no'}\n`)
+console.log(`Dry run  : ${config.dryRun ? 'yes' : 'no'}`)
+console.log(`Agents   : ${config.useMultiAgent ? 'multi-agent' : 'legacy'}\n`)
 
 run({
   docPath,

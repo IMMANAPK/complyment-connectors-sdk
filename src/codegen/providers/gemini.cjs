@@ -1,12 +1,12 @@
 'use strict'
 const https = require('https')
 
-// Calls Google Gemini API (gemini-1.5-pro)
+// Calls Google Gemini API. Override with GEMINI_MODEL when needed.
 async function generate(systemPrompt, userPrompt) {
   const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
   if (!key) throw new Error('GEMINI_API_KEY or GOOGLE_API_KEY not set')
 
-  const model = 'gemini-1.5-pro'
+  const model = (process.env.GEMINI_MODEL || 'gemini-2.5-flash').replace(/^models\//, '')
   const body = JSON.stringify({
     system_instruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],

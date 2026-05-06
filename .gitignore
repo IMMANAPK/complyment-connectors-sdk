@@ -47,3 +47,7 @@ src/connectors/*/
 
 # Test API documents used for local pipeline testing
 test-api-*.json
+virustotal-api.json
+
+# Architecture/planning docs (local notes, not repo docs)
+MULTI_AGENT_PLAN.md

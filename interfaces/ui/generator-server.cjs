@@ -115,6 +115,7 @@ app.post('/api/generate', upload.single('document'), async (req, res) => {
     'apply-git': req.body.applyGit === true || req.body.applyGit === 'true',
     'create-pr': req.body.createPr === true || req.body.createPr === 'true',
     notify: req.body.notify === true || req.body.notify === 'true',
+    'multi-agent': req.body.multiAgent === true || req.body.multiAgent === 'true',
   })
 
   // Run preflight checks; block if git ops are requested without credentials

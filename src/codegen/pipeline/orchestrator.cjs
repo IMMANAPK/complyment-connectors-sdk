@@ -38,6 +38,10 @@ async function run(opts = {}) {
     notify: opts.sendNotifications,
     'run-tests': opts.runTests,
   })
+  if (config.useMultiAgent && !opts._fromMultiAgent) {
+    const { GlobalOrchestrator } = require('../agents/core/GlobalOrchestrator.cjs')
+    return new GlobalOrchestrator(config, rootDir).run({ ...opts, config, rootDir, _fromMultiAgent: true })
+  }
   const stepConfig = { ...stepConfigFrom(config), ...(opts.stepConfig || {}) }
   const runId = opts.runId || 'RUN-' + Math.random().toString(36).slice(2, 7).toUpperCase()
   const emit = (event, data = {}) => {

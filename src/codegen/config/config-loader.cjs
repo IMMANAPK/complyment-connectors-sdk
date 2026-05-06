@@ -23,6 +23,8 @@ function loadConfig(rootDir = process.cwd(), flags = {}) {
   if (flags.notify) merged.sendNotifications = true
   if (flags['run-tests']) merged.runTests = true
   if (flags['skip-typecheck']) merged.runTypecheck = false
+  if (flags['multi-agent'] || flags.multiAgent) merged.useMultiAgent = true
+  if (flags['legacy-orchestrator']) merged.useMultiAgent = false
 
   return validateConfig(merged)
 }

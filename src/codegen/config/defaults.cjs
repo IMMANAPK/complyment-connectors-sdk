@@ -1,6 +1,20 @@
 'use strict'
 
 const DEFAULT_CONFIG = Object.freeze({
+  useMultiAgent: false,
+  multiAgent: {
+    maxCallsPerStage:    20,
+    tokenBudgetPerStage: 100_000,
+    maxRetries:          3,
+    models: {
+      supervisor:  'default',
+      analyst:     'default',
+      generator:   'default',
+      typechecker: 'default',
+      tester:      'default',
+      reviewer:    'default',
+    },
+  },
   mode: 'interactive',
   dryRun: true,
   applyGit: false,
