@@ -224,4 +224,51 @@ module.exports = {
     },
   },
 
+
+  'virustotal-rest': {
+    sdkClass: "VirusTotalRESTConnector",
+    label: "VirusTotal REST",
+    desc: "Generated connector",
+    color: "#00cfb0",
+    fields: [
+      {
+        key: "baseUrl",
+        label: "Base URL",
+        type: "text",
+        required: true
+      },
+      {
+        key: "apiKey",
+        label: "API Key",
+        type: "password",
+        required: true
+      }
+    ],
+    opsConfig: {
+      getFileReport: {
+        desc: "Get File Report",
+        params: {}
+      },
+      getUrlReport: {
+        desc: "Get Url Report",
+        params: {}
+      },
+      getDomainReport: {
+        desc: "Get Domain Report",
+        params: {}
+      },
+      getIpReport: {
+        desc: "Get Ip Report",
+        params: {}
+      },
+      getAnalysis: {
+        desc: "Get Analysis",
+        params: {}
+      },
+      getFileFeed: {
+        desc: "Get File Feed",
+        params: {}
+      }
+    }
+  },
 }
