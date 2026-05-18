@@ -9,6 +9,7 @@ const { typecheckWithFix } = require('../type-checker.cjs')
 const { runTestsWithFix } = require('../test-runner.cjs')
 const { reviewCode } = require('../code-reviewer.cjs')
 const { reviewAndFix } = require('../code-fixer.cjs')
+const { generateTestScript } = require('../test-generator.cjs')
 const { createPR } = require('../git/pr-creator.cjs')
 const { notify } = require('../notifier.cjs')
 const { gate } = require('../hitl/ConversationGate.cjs')
@@ -113,7 +114,16 @@ async function run(opts = {}) {
       }
 
       const writeResult = writeFiles(generated, rootDir, { dryRun: config.dryRun })
-      return { ...generated, writeResult, dryRun: config.dryRun, fixReview }
+
+      // Always generate the Playwright test script — test.skip handles missing creds at runtime
+      log('Generating Playwright test script…')
+      const testScriptResult = await generateTestScript(generated, analysis, rootDir).catch(err => {
+        log(`Test script generation skipped: ${err.message}`)
+        return null
+      })
+      if (testScriptResult) log(`Test script written: ${testScriptResult.specPath}`)
+
+      return { ...generated, writeResult, dryRun: config.dryRun, fixReview, testScriptResult }
     }, result => `${config.dryRun ? 'Previewed' : 'Wrote'} ${result.writeResult.files.length} files for ${result.className}`, state, rootDir, config, stepConfig, opts, emit)
 
     const typeResult = await step(4, 'typecheck', async () => {
