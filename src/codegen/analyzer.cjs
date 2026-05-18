@@ -69,18 +69,32 @@ function heuristicAnalyze(docText, humanInstruction = '') {
 
 function normalize(result) {
   const operations = Array.isArray(result.operationsFound) ? result.operationsFound : []
+  const opsWithPaths = Array.isArray(result.operationsWithPaths) ? result.operationsWithPaths : []
   const verdict = ['PASS', 'WARN', 'FAIL', 'REJECT'].includes(result.verdict) ? result.verdict : 'WARN'
+
+  // Normalize operationsWithPaths — ensure each entry has name, method, path
+  const normalizedOpsWithPaths = opsWithPaths
+    .filter(o => o && o.path && o.method)
+    .map(o => ({
+      name:   toMethodName(o.name || o.path),
+      method: String(o.method).toUpperCase(),
+      path:   String(o.path),
+    }))
+    .slice(0, 30)
+
   return {
-    isApiDocument: !!result.isApiDocument,
-    connectorName: result.connectorName || 'Generated API',
-    authType: result.authType || 'api_key',
-    authDetails: result.authDetails || result.authType || '',
-    baseUrl: result.baseUrl || '',
-    operationsFound: operations.map(toMethodName).filter(Boolean).slice(0, 30),
-    confidence: Number(result.confidence || 70),
-    missingFields: Array.isArray(result.missingFields) ? result.missingFields : [],
+    isApiDocument:      !!result.isApiDocument,
+    connectorName:      result.connectorName || 'Generated API',
+    authType:           result.authType || 'api_key',
+    authDetails:        result.authDetails || result.authType || '',
+    authHeaderName:     result.authHeaderName || '',
+    baseUrl:            result.baseUrl || '',
+    operationsFound:    operations.map(toMethodName).filter(Boolean).slice(0, 30),
+    operationsWithPaths: normalizedOpsWithPaths,
+    confidence:         Number(result.confidence || 70),
+    missingFields:      Array.isArray(result.missingFields) ? result.missingFields : [],
     verdict,
-    reason: result.reason || 'Analysis complete.',
+    reason:             result.reason || 'Analysis complete.',
   }
 }
 

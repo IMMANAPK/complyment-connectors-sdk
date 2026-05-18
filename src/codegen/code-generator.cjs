@@ -34,22 +34,52 @@ function writeFiles(result, rootDir = process.cwd(), options = {}) {
 
 function heuristicFiles({ analysis, className, connectorId, operations }) {
   const authType = normalizeAuth(analysis.authType)
-  const apiPaths = operations.map(op => `  ${constantName(op)}: '/${dasherize(op)}',`).join('\n')
+
+  // Use real paths from operationsWithPaths if available, else derive from name
+  const opsWithPaths = (analysis.operationsWithPaths || [])
+  const opPathMap = Object.fromEntries(opsWithPaths.map(o => [toMethodName(o.name), o]))
+  const opMethodMap = Object.fromEntries(opsWithPaths.map(o => [toMethodName(o.name), o.method.toLowerCase()]))
+
+  const apiPaths = operations.map(op => {
+    const realPath = opPathMap[op]?.path
+    const path = realPath || `/${dasherize(op)}`
+    return `  ${constantName(op)}: '${path}',`
+  }).join('\n')
+
   const methods = operations.map(op => {
-    const httpMethod = inferHttpMethod(op)
+    const realOp = opPathMap[op]
+    const httpMethod = opMethodMap[op] || inferHttpMethod(op)
+    const realPath = realOp?.path || ''
+
+    // Extract path params like {id}, {domain} from the real path
+    const pathParams = (realPath.match(/\{([^}]+)\}/g) || []).map(p => p.slice(1, -1))
     const hasBody = ['post', 'put', 'patch'].includes(httpMethod)
     const isDelete = httpMethod === 'delete'
-    // delete(url) takes only URL; post(url, body?) takes body as 2nd arg; get(url, params?) takes params as 2nd arg
-    const paramSig = hasBody
-      ? `body?: Record<string, unknown>`
-      : isDelete
-        ? ``
-        : `params?: Record<string, unknown>`
+
+    let paramSig = ''
+    let pathArg = `API_PATHS.${constantName(op)}`
+
+    if (pathParams.length) {
+      const paramDecls = pathParams.map(p => `${p}: string`).join(', ')
+      const templatePath = realPath.replace(/\{([^}]+)\}/g, '${$1}')
+      pathArg = `\`${templatePath}\``
+      if (hasBody) {
+        paramSig = `${paramDecls}, body?: Record<string, unknown>`
+      } else if (isDelete) {
+        paramSig = paramDecls
+      } else {
+        paramSig = `${paramDecls}, params?: Record<string, unknown>`
+      }
+    } else {
+      paramSig = hasBody ? `body?: Record<string, unknown>` : isDelete ? `` : `params?: Record<string, unknown>`
+    }
+
     const callArgs = hasBody
-      ? `API_PATHS.${constantName(op)}, body`
+      ? `${pathArg}, body`
       : isDelete
-        ? `API_PATHS.${constantName(op)}`
-        : `API_PATHS.${constantName(op)}, params`
+        ? pathArg
+        : `${pathArg}, ${pathParams.length ? 'params' : 'params'}`
+
     return `  async ${op}(${paramSig}): Promise<ConnectorResponse<unknown>> {
     const response = await this.${httpMethod}<unknown>(${callArgs})
     return parseConnectorResponse(response)
@@ -68,7 +98,7 @@ export class ${className} extends BaseConnector {
     const config: ConnectorConfig = {
       name: '${connectorId}',
       baseUrl: input.baseUrl || DEFAULT_BASE_URL,
-      auth: ${authConfigExpression(authType)},
+      auth: ${authConfigExpression(authType, analysis.authHeaderName)},
       timeout: input.timeout ?? 30000,
       retries: input.retries ?? 3,
       dryRun: input.dryRun,
@@ -148,11 +178,12 @@ function normalizeAuth(authType = '') {
   return 'api_key'
 }
 
-function authConfigExpression(authType) {
+function authConfigExpression(authType, authHeaderName = '') {
   if (authType === 'basic') return `{ type: AuthType.BASIC, username: input.username || '', password: input.password || '' }`
   if (authType === 'bearer') return `{ type: AuthType.BEARER, token: input.token || input.apiKey || '' }`
   if (authType === 'oauth2') return `{ type: AuthType.BEARER, token: input.token || input.apiKey || '' }`
-  return `{ type: AuthType.API_KEY, apiKey: input.apiKey || input.token || '', headerName: 'X-API-Key' }`
+  const header = authHeaderName || 'X-Api-Key'
+  return `{ type: AuthType.API_KEY, apiKey: input.apiKey || input.token || '', headerName: '${header}' }`
 }
 
 function inferHttpMethod(op) {
