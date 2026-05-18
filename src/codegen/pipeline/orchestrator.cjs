@@ -8,6 +8,8 @@ const { generateConnector, writeFiles } = require('../code-generator.cjs')
 const { typecheckWithFix } = require('../type-checker.cjs')
 const { runTestsWithFix } = require('../test-runner.cjs')
 const { reviewCode } = require('../code-reviewer.cjs')
+const { reviewAndFix } = require('../code-fixer.cjs')
+const { generateTestScript } = require('../test-generator.cjs')
 const { createPR } = require('../git/pr-creator.cjs')
 const { notify } = require('../notifier.cjs')
 const { gate } = require('../hitl/ConversationGate.cjs')
@@ -100,9 +102,28 @@ async function run(opts = {}) {
 
     const genResult = await step(3, 'codegen', async () => {
       log('Generating connector files…')
-      const generated = await generateConnector(analysis, docText, modeInfo.mode, instructionsFor(state, 'codegen'))
+      let generated = await generateConnector(analysis, docText, modeInfo.mode, instructionsFor(state, 'codegen'))
+
+      // Agent 1: Code Reviewer — cross-check paths, base URL, auth header vs API doc
+      // Agent 2: Code Fixer   — patch specific issues found by reviewer
+      log('Running code reviewer + fixer agents…')
+      const { genResult: fixed, reviewResult: fixReview, fixed: wasFixed } = await reviewAndFix(generated, docText, analysis)
+      if (wasFixed) {
+        log(`Code fixer applied ${fixReview.issues?.length || 0} correction(s) — score was ${fixReview.score}/100`)
+        generated = fixed
+      }
+
       const writeResult = writeFiles(generated, rootDir, { dryRun: config.dryRun })
-      return { ...generated, writeResult, dryRun: config.dryRun }
+
+      // Always generate the Playwright test script — test.skip handles missing creds at runtime
+      log('Generating Playwright test script…')
+      const testScriptResult = await generateTestScript(generated, analysis, rootDir).catch(err => {
+        log(`Test script generation skipped: ${err.message}`)
+        return null
+      })
+      if (testScriptResult) log(`Test script written: ${testScriptResult.specPath}`)
+
+      return { ...generated, writeResult, dryRun: config.dryRun, fixReview, testScriptResult }
     }, result => `${config.dryRun ? 'Previewed' : 'Wrote'} ${result.writeResult.files.length} files for ${result.className}`, state, rootDir, config, stepConfig, opts, emit)
 
     const typeResult = await step(4, 'typecheck', async () => {

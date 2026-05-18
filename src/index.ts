@@ -201,3 +201,6 @@ export type { WorkflowResult } from './ai/workflows/AgentWorkflow'
 
 export const SDK_VERSION = '0.3.5'
 export const SDK_NAME = '@skill-mine/complyment-connectors-sdk'
+
+export { VirusTotalRESTConnector } from './connectors/virustotal-rest/VirusTotalRESTConnector'
+export * from './connectors/virustotal-rest/types'
