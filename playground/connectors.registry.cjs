@@ -224,4 +224,63 @@ module.exports = {
     },
   },
 
+
+  'palo-alto-cortex-xdr': {
+    sdkClass: "PaloAltoCortexXDRConnector",
+    label: "Palo Alto Cortex XDR",
+    desc: "Generated connector",
+    color: "#00cfb0",
+    fields: [
+      {
+        key: "baseUrl",
+        label: "Base URL",
+        type: "text",
+        required: true
+      },
+      {
+        key: "apiKey",
+        label: "API Key",
+        type: "password",
+        required: true
+      }
+    ],
+    opsConfig: {
+      postGetIncidents: {
+        desc: "Post Get Incidents",
+        params: {}
+      },
+      postGetIncidentExtraData: {
+        desc: "Post Get Incident Extra Data",
+        params: {}
+      },
+      postUpdateIncident: {
+        desc: "Post Update Incident",
+        params: {}
+      },
+      postGetAlerts: {
+        desc: "Post Get Alerts",
+        params: {}
+      },
+      postGetEndpoints: {
+        desc: "Post Get Endpoints",
+        params: {}
+      },
+      postIsolate: {
+        desc: "Post Isolate",
+        params: {}
+      },
+      postUnisolate: {
+        desc: "Post Unisolate",
+        params: {}
+      },
+      postStartXqlQuery: {
+        desc: "Post Start Xql Query",
+        params: {}
+      },
+      postManagementLogs: {
+        desc: "Post Management Logs",
+        params: {}
+      }
+    }
+  },
 }
